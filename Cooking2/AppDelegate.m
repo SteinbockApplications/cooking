@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "mainVC.h"
 
 @interface AppDelegate ()
 
@@ -16,7 +17,10 @@
 
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+  
+    //add mainVC
+    mainVC * _mainVC = [mainVC new];
+    [self.window setRootViewController:_mainVC];
     return YES;
 }
 
