@@ -15,9 +15,8 @@
 @property NSArray * skillLevels;
 @property NSArray * courses;
 
-@property NSMutableArray * users;
-@property NSMutableArray * recipes;
-@property NSMutableArray * scores;
+@property NSMutableDictionary * users;
+@property NSMutableDictionary * recipes;
 
 +(id)sharedInstance;
 -(void)saveCurrentUser;

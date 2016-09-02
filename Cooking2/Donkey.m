@@ -17,7 +17,6 @@ static Donkey *sharedInstance = nil;
 
 @synthesize users;
 @synthesize recipes;
-@synthesize scores;
 
 + (Donkey *)sharedInstance {
     
@@ -117,24 +116,24 @@ static Donkey *sharedInstance = nil;
 }
 
 -(void)parseMeta:(NSDictionary *)meta {
-    
+
     /*
-    userID = {
+     userID = {
      createTS =
      email =
      name =
      location =
-     bio = 
+     bio =
      skill =
      exposesContact =
-     recipes = [recipeID,recipeID,recipeID]
-     favourites = [redipeID,recipeID]
-     following = [userID,userID,userID,userID]
-     reviews = {recipeID:score,recipeID:score}
+     recipes = [recipeID,recipeID,recipeID] //add from recipe loop
+     reviews = {recipeID:score,recipeID:score} //add from score loop
+     favourites = [redipeID,recipeID] //pull directly and parse
+     following = [userID,userID,userID,userID] // pull directly and parse
      score =
-    }
-     
-    recipeID = {
+     scoreCount
+     }
+     recipeID = {
      createTS =
      recipeName =
      duration =
@@ -144,59 +143,126 @@ static Donkey *sharedInstance = nil;
      ingredients =
      instructions =
      score =
+     scores = []
+     }
+     */
+    
+    
+    //pull the user data
+    NSMutableArray * userArray = [[NSMutableArray alloc] initWithArray:meta[@"users"]];
+    
+    //init the users dictionary
+    users = [NSMutableDictionary new];
+    
+    //add the content for the user key
+    for (NSDictionary * user in userArray){
+        NSString * userID = user[@"userID"];
+        users[userID]=user;
     }
-     
-     
-    */
-    users = [[NSMutableArray alloc] initWithArray:meta[@"users"]];
-    recipes = [[NSMutableArray alloc] initWithArray:meta[@"recipes"]];
-    scores = [[NSMutableArray alloc] initWithArray:meta[@"scores"]];
     
-    NSLog(@"USERS_ %@", users);
-    NSLog(@"RECIPES_ %@", recipes);
-    NSLog(@"SCORES_ %@", scores);
-    
-    NSMutableDictionary * reviewerDictionary = [NSMutableDictionary new];
-    NSMutableDictionary * reviewedDictionary = [NSMutableDictionary new];
-    for (NSDictionary * dictionary in scores){
-        NSString * reviewer = dictionary[@"reviewerID"];
-        NSString * reviewed = dictionary[@"userID"];
-        NSString * recipe = dictionary[@"recipeID"];
-        NSString * score = dictionary[@"score"];
-        
-        //add object to reviewer dictionary
-        NSMutableDictionary * rr = [NSMutableDictionary new];
-        //add existing objects
-        if ([reviewerDictionary.allKeys containsObject:reviewer]){
-            [rr addEntriesFromDictionary:reviewerDictionary[reviewer]];
-        }
-        //add new object
-        rr[recipe]=score;
-        
-        //save back in
-        reviewerDictionary[reviewer]=rr;
-        
-        //add object to reviewed dictionary
-        NSMutableDictionary * rd = [NSMutableDictionary new];
-        //add existing objects
-        if ([reviewedDictionary.allKeys containsObject:reviewed]){
-            [rd addEntriesFromDictionary:reviewedDictionary[reviewed]];
-        }
-        //pull the array of scores
-        NSMutableArray * rda = [NSMutableArray new];
-        if ([rd valueForKey:recipe]){
-            [rda addObjectsFromArray:rd[recipe]];
-        }
-        //add new object
-        [rda addObject:score];
-        //add back in
-        rd[recipe]=rda;
-        reviewedDictionary[reviewed]=rd;
 
+    //pull the recipe data
+    NSMutableArray * recipeArray = [[NSMutableArray alloc] initWithArray:meta[@"recipes"]];
+    
+    //init the recipes dictionary
+    recipes = [NSMutableDictionary new];
+    
+    //go through the recipes
+    for (NSMutableDictionary * recipe in recipeArray){
+        
+        NSString * recipeID = recipe[@"recipeID"];
+        recipes[recipeID] = recipe;
+        
+        NSString * userID = recipe[@"userID"];
+        if (users[userID]){
+            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[userID]];
+            NSMutableArray * existingRecipes = [NSMutableArray new];
+            [existingRecipes addObjectsFromArray:mUser[@"recipes"]];
+            [existingRecipes addObject:recipeID];
+            mUser[@"recipes"]=existingRecipes;
+            users[userID]=mUser;
+        }
     }
     
-    NSLog(@"reviewer dictionary is %@", reviewerDictionary);
-    NSLog(@"reviewed dictionary is %@", reviewedDictionary);
+    //pull the score data
+    NSMutableArray * scoreArray = [[NSMutableArray alloc] initWithArray:meta[@"scores"]];
+
+    //loop through adding in the scores
+    for (NSDictionary * score in scoreArray){
+        
+        NSString * recipeID = score[@"recipeID"];
+        NSString * userID = score[@"userID"];
+        NSString * reviewerID = score[@"reviewerID"];
+        NSString * review = score[@"score"];
+        
+        //set the score for the reviewer ID
+        //as this is displayed when the user
+        //visits this recipe
+        if (users[reviewerID]){
+            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[reviewerID]];
+            NSMutableDictionary * existingScores = [NSMutableDictionary new];
+            existingScores[recipeID]=review;
+            mUser[@"reviews"]=existingScores;
+            users[reviewerID]=mUser;
+        }
+        
+        //set the score for the recipe ID
+        //this is used to calculate the
+        //mean average score for the recipe
+        if (recipes[recipeID]){
+            NSMutableDictionary * mRecipe = [[NSMutableDictionary alloc] initWithDictionary:recipes[recipeID]];
+            NSMutableArray * existingScores = [NSMutableArray new];
+            [existingScores addObjectsFromArray:mRecipe[@"scores"]];
+            [existingScores addObject:review];
+            mRecipe[@"scores"]=existingScores;
+            recipes[recipeID]=mRecipe;
+        }
+        
+        //set the score for the user ID
+        //this is calculated at the end
+        if (users[userID]){
+            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[userID]];
+            NSMutableArray * existingScores = [NSMutableArray new];
+            [existingScores addObjectsFromArray:mUser[@"scores"]];
+            [existingScores addObject:review];
+            mUser[@"scores"]=existingScores;
+            users[userID]=mUser;
+        }
+    }
+    
+    //calculate averages
+    for (NSMutableDictionary * user in users.allValues){
+        if (user[@"scores"]){
+            
+            //calculate mean
+            float total = 0.0f;
+            NSArray * scores = user[@"scores"];
+            for (NSString * scoreString in scores){ total += scoreString.floatValue;}
+            float mean = total / scores.count;
+        
+            //save in
+            user[@"scores"]=nil;
+            user[@"scoreCount"]=[NSString stringWithFormat:@"%i",(int)scores.count];
+            user[@"score"]=[NSString stringWithFormat:@"%f",mean];
+            users[user[@"userID"]]=user;
+        }
+    }
+    
+    for (NSMutableDictionary * recipe in recipes.allValues){
+        
+        if (recipe[@"scores"]){
+            
+            //calculate mean
+            float total = 0.0f;
+            NSArray * scores = recipe[@"scores"];
+            for (NSString * scoreString in scores){ total += scoreString.floatValue;}
+            float mean = total / scores.count;
+            
+            //save in
+            recipe[@"score"]=[NSString stringWithFormat:@"%f",mean];
+            recipes[recipe[@"recipeID"]]=recipe;
+        }
+    }
+    
 }
-
 @end

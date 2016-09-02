@@ -139,6 +139,7 @@
 //DATA
 -(void)metaReady {
     
+    NSLog(@"META READY");
     
 }
 

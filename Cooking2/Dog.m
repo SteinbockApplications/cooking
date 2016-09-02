@@ -261,7 +261,7 @@ static Dog *sharedInstance = nil;
      if (jsonError){
          NSLog(@"JSON ERROR: %@", jsonError.description);
      } else {
-         [_donkey parseMeta:dictionary];
+         [_donkey parseMeta:dictionary]; 
      }
      
      
