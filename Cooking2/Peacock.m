@@ -11,6 +11,7 @@
 @implementation Peacock
 static Peacock *sharedInstance = nil;
 @synthesize appleDark, appleGrey, appleWhite, appleBlue, tedRed, soundCloudOrange, appColour;
+@synthesize korelessPink, korelessPurple;
 
 + (Peacock *)sharedInstance {
     
@@ -31,8 +32,14 @@ static Peacock *sharedInstance = nil;
         tedRed = [self colourForHex:@"#E62B1D"];
         soundCloudOrange = [self colourForHex:@"#FF3F1B"];
         appColour = [self colourForHex:@"#365F18"];
-        //appColour = [self colourForHex:@"#5C00E6"];
+        appColour = [self colourForHex:@"#5C00E6"];
         appColour = soundCloudOrange;
+        
+        //koreless purple #773275
+        //koreless pink #A41838
+        
+        korelessPurple = [self colourForHex:@"#773275"];
+        korelessPink = [self colourForHex:@"#A41838"];
     }
     return self;
 }

@@ -199,14 +199,12 @@
 }
 
 
-
 -(void)pushLogin{
     
 }
 -(void)pushContinue{
     
 }
-
 -(void)popSelf {
     [[NSNotificationCenter defaultCenter] postNotificationName:@"kPopOpenVC" object:nil];
 }

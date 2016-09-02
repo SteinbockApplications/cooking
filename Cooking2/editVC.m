@@ -901,17 +901,17 @@
         NSDictionary * userInfo = n.userInfo;
         if (type == 0){ //main pic
             
-            mediaDictionary[@"heroOriginal"] = (UIImage *)userInfo[@"original"];
-            mediaDictionary[@"heroThumb"] = (UIImage *)userInfo[@"thumb"];
-            heroIV.image = mediaDictionary[@"heroOriginal"];
+            mediaDictionary[@"hero"] = (UIImage *)userInfo[@"original"];
+          //  mediaDictionary[@"heroThumb"] = (UIImage *)userInfo[@"thumb"];
+            heroIV.image = mediaDictionary[@"hero"];
             
         } else if (type == 1){ //additional photo
             
             int index = (int)selectedAdditionalView.tag;
-            NSString * originalKey = [NSString stringWithFormat:@"aOriginal_%i", index];
-            NSString * thumbKey = [NSString stringWithFormat:@"aThumb_%i",index];
+            NSString * originalKey = [NSString stringWithFormat:@"a%i", index];
+           // NSString * thumbKey = [NSString stringWithFormat:@"aThumb_%i",index];
             mediaDictionary[originalKey] = (UIImage *)userInfo[@"original"];
-            mediaDictionary[thumbKey] = (UIImage *)userInfo[@"thumb"];
+           // mediaDictionary[thumbKey] = (UIImage *)userInfo[@"thumb"];
             selectedAdditionalView.image = mediaDictionary[originalKey];
             
         } else if (type == 2){ //video
@@ -979,7 +979,9 @@
 }
 -(void)next {
     
-    if (page!=4){
+    NSLog(@"NEXT: %i", page);
+    
+    if (page!=2){
         page++;
         [mainScroller setContentOffset:CGPointMake(page*w, 0) animated:true];
     } else {
@@ -1036,7 +1038,7 @@
 
                          }
                          completion:^(BOOL finished){
-                             
+                             nextButton.frame = nextButtonView.bounds;
                          }];
         
         CABasicAnimation * corner = [CABasicAnimation animationWithKeyPath:@"cornerRadius"];
@@ -1068,7 +1070,7 @@
 
                          }
                          completion:^(BOOL finished){
-
+                             nextButton.frame = nextButtonView.bounds;
                          }];
         
         CABasicAnimation * corner = [CABasicAnimation animationWithKeyPath:@"cornerRadius"];
@@ -1095,24 +1097,22 @@
     NSLog(@"publish");
     
     //check all fields filled out
-    
-    
-    //create new id if none exists
-    Recipe * recipe = [Recipe new];
-    recipe.userID = _donkey.currentUser.userID;
-    recipe.recipeID = [NSString stringWithFormat:@"RECIPE_%@", [_peacock uniqueID]];
-    recipe.timestamp = [NSString stringWithFormat:@"%.0f",[[NSDate date] timeIntervalSince1970]];
-    recipe.recipeName = titleTF.text;
-    recipe.duration = [NSString stringWithFormat:@"%i", hourTF.text.intValue * 60 + minTF.text.intValue];
-    recipe.difficulty = _donkey.skillLevels[[skillPicker selectedRowInComponent:0]];
-    recipe.course = _donkey.courses[[coursePicker selectedRowInComponent:0]];
-    recipe.introduction = descriptionTV.text;
-    recipe.ingredients = ingredientsTV.text;
-    recipe.instructions = instructionsTV.text;
-    recipe.scores = @[];
+
+    //Create profile dictionary
+    NSMutableDictionary * recipe = [NSMutableDictionary new];
+    recipe[@"timestamp"] = [NSString stringWithFormat:@"%.0f",[[NSDate date] timeIntervalSince1970]];
+    recipe[@"userID"] = _donkey.deviceUser[@"userID"];
+    recipe[@"recipeID"] = [NSString stringWithFormat:@"RECIPE_%@", [_peacock uniqueID]];
+    recipe[@"recipeName"] = titleTF.text;
+    recipe[@"duration"] = [NSString stringWithFormat:@"%i", hourTF.text.intValue * 60 + minTF.text.intValue];
+    recipe[@"difficulty"] = _donkey.skillLevels[[skillPicker selectedRowInComponent:0]];
+    recipe[@"course"] = _donkey.courses[[coursePicker selectedRowInComponent:0]];
+    recipe[@"introduction"] = descriptionTV.text;
+    recipe[@"ingredients"] = ingredientsTV.text;
+    recipe[@"instructions"] = instructionsTV.text;
+    recipe[@"mediaDictionary"] = mediaDictionary;
     [_dog updateRecipe:recipe];
-    
-    
+
     
 }
 

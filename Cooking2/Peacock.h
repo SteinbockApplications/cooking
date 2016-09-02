@@ -17,6 +17,10 @@
 @property UIColor * soundCloudOrange;
 @property UIColor * appColour;
 
+@property UIColor * korelessPink;
+@property UIColor * korelessPurple;
+
+
 +(id)sharedInstance;
 -(NSString *)uniqueID;
 -(UIColor *)colourForHex:(NSString *)hex;

@@ -16,9 +16,8 @@
 
 -(void)checkUsernameIsAvailable:(NSString *)username;
 -(void)updateUser:(NSDictionary *)dictionary;
+-(void)updateRecipe:(NSDictionary *)dictionary;
 
-
--(void)updateRecipe:(Recipe *)recipe;
 
 
 

@@ -514,10 +514,6 @@
     
     if (isNewUser){
         
-        //Temp
-        profileThumb = [UIImage imageNamed:@"openBG.jpeg"];
-        profileOriginal = [UIImage imageNamed:@"openBG.jpeg"];
-        
         //Create profile dictionary
         profile = [NSMutableDictionary new];
         profile[@"timestamp"] = [NSString stringWithFormat:@"%.0f",[[NSDate date] timeIntervalSince1970]];
@@ -534,11 +530,10 @@
         profile[@"original"] = profileOriginal;
         [_dog updateUser:profile];
         
-       
+        
     } else {
         
         //only update the changed values
-        
         
     }
     
@@ -547,46 +542,18 @@
 -(void)profileUpdated {
     
     NSLog(@"profile updated");
+    profile[@"thumb"] = nil;
+    profile[@"original"] = nil;
     
-    //if it's a new user add it to the user array
-    if (isNewUser){
-        
-        incomingUser = [User new];
-        incomingUser.userID = profile[@"userID"];
-        incomingUser.email = profile[@"eamil"];
-        incomingUser.name = profile[@"name"];
-        incomingUser.location = profile[@"location"];
-        incomingUser.bio = profile[@"bio"];
-        incomingUser.skillLevel = @"amateur";
-        incomingUser.exposesContact = profile[@"exposesContact"];
-        incomingUser.followingArray = @[];
-        incomingUser.favouriteArray = @[];
-        incomingUser.recipeArray = @[];
-   
-        //add to the array
-        
-    } else { //if it's an existing user update the user array
-        
-        incomingUser.userID = profile[@"userID"];
-        incomingUser.email = profile[@"eamil"];
-        incomingUser.name = profile[@"name"];
-        incomingUser.location = profile[@"location"];
-        incomingUser.bio = profile[@"bio"];
-        incomingUser.skillLevel = @"amateur";
-        incomingUser.exposesContact = profile[@"exposesContact"];
-
-        //update the array
-    }
-    
-    
-    //set the current user
-    //_donkey.currentUser = incomingUser;
-    //[_donkey saveCurrentUser];
-    
+    _donkey.users[@"userID"]=profile;
+    _donkey.deviceUser = profile;
+    [_donkey saveCurrentUser];
     
     //pop self
     shouldLoginOnPop = true;
     [self popSelf];
+    
+    NSLog(@"donkey users is %@", _donkey.users);
     
 }
 -(void)profileFailedToUpdate {
@@ -648,7 +615,7 @@
     [[NSNotificationCenter defaultCenter] postNotificationName:@"kPopRegisterVC" object:nil userInfo:@{@"shouldLogin":[NSString stringWithFormat:@"%i",shouldLoginOnPop]}];
     
 }
-- (void)didReceiveMemoryWarning {
+-(void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }

@@ -312,8 +312,7 @@ static Dog *sharedInstance = nil;
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"dbPassword"] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"%@\r\n", dbPassword] dataUsingEncoding:NSUTF8StringEncoding]];
-    
-    
+
     //timestamp
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"timestamp"] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -427,21 +426,61 @@ static Dog *sharedInstance = nil;
 
 
 
--(void)updateRecipe:(Recipe *)recipe {
+-(void)updateRecipe:(NSDictionary *)dictionary {
     
 
     NSString * dbUser = @"Ghost";
     NSString * dbPassword = @"65j8krP2";
 
-    /*
-    UIImage * image = dictionary[@"image"]; //image
-    UIImage * thumb = dictionary[@"thumb"]; //image
-    NSData * imageData = UIImageJPEGRepresentation(image, 0.6);
-    NSData * thumbData = UIImageJPEGRepresentation(thumb, 0.6);
-    */
-    //NSLog(@"received: %@", dictionary);
+    NSString * timestamp = dictionary[@"timestamp"]; //string
+    NSString * userID = dictionary[@"userID"]; //string
+    NSString * recipeID = dictionary[@"recipeID"];
     
-    
+    NSString * recipeName = dictionary[@"recipeName"];
+    NSString * duration = dictionary[@"duration"];
+    NSString * difficulty = dictionary[@"difficulty"];
+    NSString * course = dictionary[@"course"];
+    NSString * introduction = dictionary[@"introduction"];
+    NSString * ingredients = dictionary[@"ingredients"];
+    NSString * instructions = dictionary[@"instructions"];
+    NSDictionary * mediaDictionary = dictionary[@"mediaDictionary"];
+
+    NSData * heroData;
+    NSData * videoThumbData;
+    NSData * a0Data;
+    NSData * a1Data;
+    NSData * a2Data;
+    NSData * a3Data;
+
+    if (mediaDictionary[@"hero"]){
+        UIImage * image = mediaDictionary[@"hero"];
+        heroData = UIImageJPEGRepresentation(image, 0.6);
+    }
+    //VIDEO
+    if (mediaDictionary[@"videoThumb"]){
+        UIImage * image = mediaDictionary[@"videoThumb"];
+        videoThumbData = UIImageJPEGRepresentation(image, 0.6);
+    }
+    if (mediaDictionary[@"a0"]){
+        UIImage * image = mediaDictionary[@"a1"];
+        a0Data = UIImageJPEGRepresentation(image, 0.6);
+    }
+    if (mediaDictionary[@"a1"]){
+        UIImage * image = mediaDictionary[@"a1"];
+        a1Data = UIImageJPEGRepresentation(image, 0.6);
+    }
+    if (mediaDictionary[@"a2"]){
+        UIImage * image = mediaDictionary[@"a2"];
+        a2Data = UIImageJPEGRepresentation(image, 0.6);
+    }
+    if (mediaDictionary[@"a3"]){
+        UIImage * image = mediaDictionary[@"a3"];
+        a3Data = UIImageJPEGRepresentation(image, 0.6);
+    }
+
+
+    NSLog(@"received: %@", dictionary);
+
     //build the data
     NSString * boundary = @"--->boundary<---";
     NSMutableData * body = [NSMutableData data];
@@ -457,61 +496,101 @@ static Dog *sharedInstance = nil;
     //userID
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"userID"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.userID] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", userID] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //recipeID
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"recipeID"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.recipeID] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipeID] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //timestamp
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"timestamp"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.timestamp] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", timestamp] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //recipe name
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"recipeName"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.recipeName] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipeName] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //duration
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"duration"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.duration] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", duration] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //difficulty
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"difficulty"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.difficulty] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", difficulty] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //course
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"course"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.course] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", course] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //introduction
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"introduction"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.introduction] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", introduction] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //ingredients
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"ingredients"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.ingredients] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", ingredients] dataUsingEncoding:NSUTF8StringEncoding]];
     
     //instructions
     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", @"instructions"] dataUsingEncoding:NSUTF8StringEncoding]];
-    [body appendData:[[NSString stringWithFormat:@"%@\r\n", recipe.instructions] dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[[NSString stringWithFormat:@"%@\r\n", instructions] dataUsingEncoding:NSUTF8StringEncoding]];
+    
+   
+    if (heroData) {
+        
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"hero.jpg\"\r\n", @"heroData"] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:heroData];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    if (videoThumbData) {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"videoThumb.jpg\"\r\n", @"videoThumbData"] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:videoThumbData];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    if (a0Data) {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"a0.jpg\"\r\n", @"a0Data"] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:a0Data];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    if (a1Data) {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"a1.jpg\"\r\n", @"a1Data"] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:a1Data];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    if (a2Data) {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"a2.jpg\"\r\n", @"a2Data"] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:a2Data];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    if (a3Data) {
+        [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"a3.jpg\"\r\n", @"a3Data"] dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+        [body appendData:a3Data];
+        [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+
+    
     
     /*
-     if (imageData) {
-     [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-     [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"imageData.jpg\"\r\n", @"imageData"] dataUsingEncoding:NSUTF8StringEncoding]];
-     [body appendData:[@"Content-Type: image/jpeg\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
-     [body appendData:imageData];
-     [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
-     }
      if (thumbData) {
      [body appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
      [body appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"; filename=\"thumbData.jpg\"\r\n", @"thumbData"] dataUsingEncoding:NSUTF8StringEncoding]];
@@ -519,8 +598,8 @@ static Dog *sharedInstance = nil;
      [body appendData:thumbData];
      [body appendData:[[NSString stringWithFormat:@"\r\n"] dataUsingEncoding:NSUTF8StringEncoding]];
      }
-     
-     */
+   */
+    
     //close
     [body appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
     
@@ -553,7 +632,8 @@ static Dog *sharedInstance = nil;
     }];
     [uploadTask resume];
 
-    
+     
+  /*   */
     
 }
 

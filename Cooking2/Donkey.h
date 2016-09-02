@@ -10,6 +10,7 @@
 #import "User.h"
 
 @interface Donkey : NSObject
+@property NSDictionary * deviceUser;
 @property User * currentUser;
 @property NSArray * cantons;
 @property NSArray * skillLevels;
@@ -23,4 +24,8 @@
 -(void)loadCurrentUser;
 
 -(void)parseMeta:(NSDictionary *)meta;
+
+-(void)sortUserByScore;
+-(NSArray *)sortUsersByScoreForCanton:(NSString *)canton forRange:(int)days;
+-(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton forRange:(int)days;
 @end

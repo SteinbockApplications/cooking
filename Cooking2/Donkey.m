@@ -10,6 +10,9 @@
 
 @implementation Donkey
 static Donkey *sharedInstance = nil;
+
+@synthesize deviceUser;
+
 @synthesize currentUser;
 @synthesize cantons;
 @synthesize skillLevels;
@@ -71,50 +74,19 @@ static Donkey *sharedInstance = nil;
 }
 
 -(void)saveCurrentUser {
-    
-    NSLog(@"donkey on save: %@", currentUser);
-    
-    NSMutableDictionary * profile = [NSMutableDictionary new];
-    profile[@"userID"] = currentUser.userID;
-    profile[@"email"] = currentUser.email;
-    profile[@"name"] = currentUser.name;
-    profile[@"location"] = currentUser.location;
-    profile[@"bio"] = currentUser.bio;
-    profile[@"exposesContact"] = currentUser.exposesContact;
-    profile[@"favourites"] = currentUser.favouriteArray;
-    profile[@"following"] = currentUser.followingArray;
-    profile[@"recipes"] = currentUser.recipeArray;
-    
-    [[NSUserDefaults standardUserDefaults] setObject:profile forKey:@"profile"];
+
+    [[NSUserDefaults standardUserDefaults] setObject:deviceUser forKey:@"profile"];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
 }
 -(void)loadCurrentUser {
     
     if ([[NSUserDefaults standardUserDefaults] valueForKey:@"profile"]){
-    
-        NSLog(@"HIT");
-        
-        NSMutableDictionary * profile = [NSMutableDictionary new];
-        [profile addEntriesFromDictionary:[[NSUserDefaults standardUserDefaults] valueForKey:@"profile"]];
-        
-        NSLog(@"profile is %@", profile);
-        
-        currentUser = [User new];
-        currentUser.userID = profile[@"userID"];
-        currentUser.email = profile[@"email"];
-        currentUser.name = profile[@"name"];
-        currentUser.location = profile[@"location"];
-        currentUser.bio = profile[@"bio"];
-        currentUser.exposesContact = profile[@"exposesContact"];
-        currentUser.favouriteArray = profile[@"favourites"];
-        currentUser.followingArray = profile[@"following"];
-        currentUser.recipeArray = profile[@"recipes"];
+        deviceUser = [[NSUserDefaults standardUserDefaults] valueForKey:@"profile"];
         
     }
     
 }
-
 -(void)parseMeta:(NSDictionary *)meta {
 
     /*
@@ -264,5 +236,71 @@ static Donkey *sharedInstance = nil;
         }
     }
     
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"kMetaReady" object:nil];
+    
 }
+
+
+
+-(NSArray *)sortUsersByScoreForCanton:(NSString *)canton forRange:(int)days {
+    
+    //holds filtered users
+    NSMutableArray * unsorted = [NSMutableArray new];
+    
+    //create range timestamp
+    NSDate * rangeDate = [[NSDate date] dateByAddingTimeInterval:-86400*days];
+    NSString * rangeTimestamp = [NSString stringWithFormat:@"%.0f",[rangeDate timeIntervalSince1970]];
+
+    //loop through pulling out values
+    for (NSDictionary * user in users.allValues){
+        
+        NSString * location = user[@"location"];
+        if ([location isEqualToString:canton] || [canton.lowercaseString isEqualToString:@"all"]){
+            
+            NSString * timestamp = user[@"createTS"];
+            if (timestamp.floatValue > rangeTimestamp.floatValue || days == -1){
+                [unsorted addObject:user];
+            }
+        }
+    }
+
+    //sort by score
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+    NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
+    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
+    
+    
+    
+    return sorted;
+    
+}
+-(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton forRange:(int)days {
+    
+    //holds filtered users
+    NSMutableArray * unsorted = [NSMutableArray new];
+    
+    //create range timestamp
+    NSDate * rangeDate = [[NSDate date] dateByAddingTimeInterval:-86400*days];
+    NSString * rangeTimestamp = [NSString stringWithFormat:@"%.0f",[rangeDate timeIntervalSince1970]];
+    
+    //loop through pulling out values
+    for (NSDictionary * user in recipes.allValues){
+        
+        NSString * location = user[@"location"];
+        if ([location isEqualToString:canton] || [canton.lowercaseString isEqualToString:@"all"]){
+            
+            NSString * timestamp = user[@"createTS"];
+            if (timestamp.floatValue > rangeTimestamp.floatValue || days == -1){
+                [unsorted addObject:user];
+            }
+        }
+    }
+    
+    //sort by score
+    NSSortDescriptor * descriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[descriptor]];
+    return sorted;
+}
+
+
 @end

@@ -16,6 +16,8 @@
 #import "editVC.h"
 #define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
 
+#import "mainCell.h"
+
 @interface mainVC () {
 
     Peacock * _peacock;
@@ -36,13 +38,36 @@
     
     bool statusBarIsHidden;
     
+    
+    UIScrollView * mainScroller;
+    UIView * contentView;
+    
+    NSString * selectedGroup;
+    NSString * selectedCanton;
+    NSString * selectedRange;
+    
+    NSArray * sortedListing;
+    NSMutableArray * cells;
+    
+    //
+    UIButton * groupOneButton;
+    UIButton * groupTwoButton;
+    
+    UIButton * filterOneButton;
+    UIButton * filterTwoButton;
+    NSString * filterOne;
+    NSString * filterTwo;
+    
+    
+    UISegmentedControl * seg;
 }
 
 @end
 
 @implementation mainVC
 
-- (void)viewDidLoad {
+//SETUP
+-(void)viewDidLoad {
     [super viewDidLoad];
     [self setup];
     [self layout];
@@ -50,6 +75,7 @@
 }
 -(void)setup{
  
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(metaReady) name:@"kMetaReady" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popOpenVC) name:@"kPopOpenVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popEditVC) name:@"kPopEditVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarAppearance:) name:@"kStatusBarAppearance" object:nil];
@@ -67,8 +93,19 @@
     
     self.view.backgroundColor = [UIColor blackColor];
     
+    mainScroller = [UIScrollView new];
+    mainScroller.frame = self.view.bounds;
+    mainScroller.showsVerticalScrollIndicator = false;
+    mainScroller.showsHorizontalScrollIndicator = false;
+    mainScroller.delegate = self;
+    mainScroller.alwaysBounceVertical = true;
+    [self.view addSubview:mainScroller];
+    
+    contentView = [UIView new];
+    [mainScroller addSubview:contentView];
+    
     UIView * topBar = [UIView new];
-    topBar.frame = CGRectMake(0, 0, w, 60);
+    topBar.frame = CGRectMake(0, 0, w, 110);
     topBar.backgroundColor = _peacock.appColour;
     [self.view addSubview:topBar];
     
@@ -79,28 +116,62 @@
     [searchButton setImageEdgeInsets:UIEdgeInsetsMake(5, 5, 5, 5)];
     [searchButton addTarget:self action:@selector(search) forControlEvents:UIControlEventTouchUpInside];
     [topBar addSubview:searchButton];
-    
-    float width = (w-80)/2;
-    
-    UIButton * chefButton = [UIButton new];
-    chefButton.frame = CGRectMake(40, 20, width, 40);
-    [chefButton setTitle:@"Chef" forState:UIControlStateNormal];
-    [topBar addSubview:chefButton];
-    
-    UIButton * recipeButton = [UIButton new];
-    recipeButton.frame = CGRectMake(40+width, 20, width, 40);
-    [recipeButton setTitle:@"Rezept" forState:UIControlStateNormal];
-    [topBar addSubview:recipeButton];
+
+    seg = [[UISegmentedControl alloc] initWithItems:@[@"Köche",@"Rezepte"]];
+    seg.frame = CGRectMake((w-200)/2, 25, 200, 30);
+    seg.tintColor = [UIColor whiteColor];
+    NSDictionary *attributes = [NSDictionary dictionaryWithObject:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular] forKey:NSFontAttributeName];
+    [seg setTitleTextAttributes:attributes forState:UIControlStateNormal];
+    [seg addTarget:self action:@selector(changeGroup) forControlEvents:UIControlEventValueChanged];
+    [topBar addSubview:seg];
 
     UIButton * profileButton = [UIButton new];
-    profileButton.frame = CGRectMake(w-40, 20, 40, 40);
-    [profileButton setImage:[[UIImage imageNamed:@"profile-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+    profileButton.frame = CGRectMake(w-50, 20, 40, 40);
+    [profileButton setImage:[[UIImage imageNamed:@"chef-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
     [profileButton setTintColor:[UIColor whiteColor]];
     [profileButton addTarget:self action:@selector(profile) forControlEvents:UIControlEventTouchUpInside];
+    profileButton.layer.cornerRadius = 20;
+    profileButton.layer.borderColor = [UIColor whiteColor].CGColor;
+    profileButton.layer.borderWidth = 1.0f;
+    profileButton.clipsToBounds = true;
     [topBar addSubview:profileButton];
+
+    UIImageView * div = [UIImageView new];
+    div.frame = CGRectMake(0, 69, w, 0.5);
+    div.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
+    [topBar addSubview:div];
     
-    //profileButton.backgroundColor = [UIColor redColor];
+    //FILTERS
+    UIView * filterView = [UIView new];
+    filterView.frame = CGRectMake(0, 70, w, 40);
+    filterView.backgroundColor = [_peacock.appColour colorWithAlphaComponent:1.5f];
+    [topBar addSubview:filterView];
     
+    filterOneButton = [UIButton new];
+    filterOneButton.frame = CGRectMake(0, 0, w/2, 40);
+    [filterOneButton setTitle:@"Alle" forState:UIControlStateNormal];
+    [filterOneButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [filterOneButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
+    [filterOneButton addTarget:self action:@selector(changeFilter:) forControlEvents:UIControlEventTouchUpInside];
+    [filterView addSubview:filterOneButton];
+    
+    UIImageView * filterDiv = [UIImageView new];
+    filterDiv.frame = CGRectMake(w/2, 0, 0.5, 40);
+    filterDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
+    [filterView addSubview:filterDiv];
+    
+    filterTwoButton = [UIButton new];
+    filterTwoButton.frame = CGRectMake(w/2, 0, w/2, 40);
+    [filterTwoButton setTitle:@"Schweizweit" forState:UIControlStateNormal];
+    [filterTwoButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [filterTwoButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
+    [filterTwoButton addTarget:self action:@selector(changeFilter:) forControlEvents:UIControlEventTouchUpInside];
+    [filterView addSubview:filterTwoButton];
+    
+    
+    
+    
+    //ADD BUTTON
     addButtonView = [UIView new];
     addButtonView.frame = CGRectMake(w-80, h-80, 60, 60);
     addButtonView.backgroundColor = _peacock.appColour;
@@ -119,27 +190,193 @@
 }
 -(void)begin{
     
+    //set seg defaults
+    seg.selectedSegmentIndex = 0;
+    if ([selectedGroup isEqualToString:@"recipe"]){
+        seg.selectedSegmentIndex = 1;
+    }
+    
+    //set filter defaults
+    filterOne = @"-1";
+    filterTwo = @"all";
+    selectedGroup = @"user";
+    
+    //set preferences
+    if ([[NSUserDefaults standardUserDefaults] valueForKey:@"preferredListing"]){
+        selectedGroup = [[NSUserDefaults standardUserDefaults] valueForKey:@"preferredListing"];
+    }
+
     //fetch meta
     [_dog fetchMetaData];
     
     //load current user
     [_donkey loadCurrentUser];
-    NSLog(@"current user is %@", _donkey.currentUser);
 
     //if there's no user, push openVC
-    if (!_donkey.currentUser){
+    if (!_donkey.deviceUser){
         [self pushOpenVCShouldAnimate:false];
     } else {
-        
+        NSLog(@"load for this user: %@", _donkey.deviceUser);
     }
-    
-
 }
 
 //DATA
 -(void)metaReady {
+    [self refreshScroller];
+}
+-(void)changeGroup {
     
-    NSLog(@"META READY");
+    selectedGroup = @"user";
+    if (seg.selectedSegmentIndex == 1){
+        selectedGroup = @"recipe";
+    }
+    
+    [self refreshScroller];
+    
+}
+-(void)changeFilter:(UIButton *)button {
+    
+    [self filterChanged];
+    
+}
+-(void)filterChanged {
+    
+    [self refreshScroller];
+}
+
+
+-(void)refreshScroller {
+    
+    //set list based on group
+    if ([selectedGroup isEqualToString:@"user"]){ 
+        sortedListing = [_donkey sortUsersByScoreForCanton:filterTwo forRange:filterOne.intValue];
+    } else {
+        sortedListing = [_donkey sortRecipesByScoreForCanton:filterTwo forRange:filterOne.intValue];
+    }
+
+    //empty out
+    for (NSObject * obj in cells){
+        if ([obj isKindOfClass:[mainCell class]]){
+            mainCell * cell = (mainCell *)obj;
+            [cell removeFromSuperview];
+        }
+    }
+    
+    //create new
+    cells = [NSMutableArray new];
+    for (int n = 0; n < sortedListing.count; n++){
+        [cells addObject:[NSObject new]];
+    }
+    
+    //force update
+    [self scrollViewDidScroll:mainScroller];
+    
+}
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    
+    if (![scrollView isEqual:mainScroller]){
+        return;
+    }
+    
+    //set vars
+    float topMargin = -h; //distance above y at which cells should disappear
+    float bottomMargin = h; //distance below y + h at which cells should disappear
+    float y = mainScroller.contentOffset.y; //actual content offset
+    float tallyY = 110; //the running height of y offset for cells
+    float tallyX = 0;
+    CGSize cellSize = CGSizeMake(w, 200);
+    
+    //KEY: update content size (moving counter scroll)
+    //contentView.transform = CGAffineTransformMakeTranslation(0, y);
+    
+    //add and remove cells depending on offset
+    for (int n = 0; n < cells.count; n++){
+        
+        
+        //check if the object at the
+        //nth index is an allocated cell
+        bool isCell = false;
+        if ([cells[n] isKindOfClass:[mainCell class]]){ isCell = true; }
+        
+        if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
+            
+            if (isCell){ //Removes the cells above if they exist
+                [[cells objectAtIndex:n] removeFromSuperview];
+                [cells replaceObjectAtIndex:n withObject:[NSObject new]];
+            }
+        } else if (tallyY > y + mainScroller.frame.size.height + bottomMargin){ //cells below not meeting threshold
+            
+            if (isCell){ //Removes the cells below if they exist
+                [[cells objectAtIndex:n] removeFromSuperview];
+                [cells replaceObjectAtIndex:n withObject:[NSObject new]];
+            }
+            
+        } else {
+            
+            //Create the cell if none exists
+            if (!isCell){
+                
+                NSLog(@"CREATE");
+                
+                //create the cell, set frame and add to contentView
+                mainCell * cell = [[mainCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width, cellSize.height)];
+                cell.layer.shouldRasterize = true;
+                cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
+                cell.opaque = true;
+                cell.clipsToBounds = true;
+                cell.backgroundColor = [UIColor redColor];
+                [contentView addSubview:cell];
+                
+                //data
+                NSDictionary * d = sortedListing[n];
+                if ([selectedGroup isEqualToString:@"user"]){
+                    [cell updateForUser:d];
+                } else {
+                    [cell updateForRecipe:d];
+                }
+            
+                /*
+                //media
+                if ([cachedThumbs[n] isKindOfClass:[UIImage class]]){ //thumb is available
+                    //if a file exists, show it now
+                    cell.iv.image = cachedThumbs[n];
+                } else {
+                    //otherwise pull it
+                    [_dog fetchFile:seal.thumbFN fromFolder:@"thumbs" callback:seal.thumbFN];
+                }
+                */
+                
+                //replace NSObject with cell
+                [cells replaceObjectAtIndex:n withObject:cell];
+            }
+        }
+        
+        tallyX += cellSize.width;
+        if (tallyX >= w){
+            tallyX = 0;
+            tallyY += cellSize.height;
+            
+        }
+
+    }
+    
+    
+    mainScroller.contentSize = CGSizeMake(w, cells.count*cellSize.height);
+    //NSLog(@"CELLS IS %@", cells);
+    
+
+    //parallax effect
+    float travelDistance = h + cellSize.height;
+    for (int n = 0; n < cells.count; n++){
+        NSObject * obj = cells[n];
+        if ([obj isKindOfClass:[mainCell class]]){
+            mainCell * cell = cells[n];
+            float cellY = [contentView convertPoint:cell.frame.origin toView:self.view].y+cellSize.height;
+            float p = cellY/travelDistance; //percentage complete of vertical journey
+            cell.bgIV.transform = CGAffineTransformMakeTranslation(0, p*-30);
+        }
+    }
+    
     
 }
 
@@ -265,6 +502,8 @@
                      
                      }];
     
+    [self refreshScroller];
+    
 }
 
 //STATUS BAR
@@ -285,6 +524,40 @@
     // Dispose of any resources that can be recreated.
 }
 
+
+
+/*
+ 
+ */
+
+/*
+ //top bar effect
+ if (lastOffset < scrollView.contentOffset.y) { //up
+ 
+ if (topBar.frame.origin.y > -40 && scrollView.contentOffset.y > 0){
+ topOffset += (lastOffset-scrollView.contentOffset.y)/5;
+ topOffset = MAX(-40, topOffset);
+ topBar.transform = CGAffineTransformMakeTranslation(0, topOffset);
+ 
+ float p = topOffset / -40;
+ backButton.alpha = 1-p;
+ 
+ }
+ 
+ } else if (lastOffset > scrollView.contentOffset.y) {//down
+ 
+ if (topBar.frame.origin.y < 0 && scrollView.contentOffset.y < scrollView.contentSize.height-scrollView.frame.size.height){
+ topOffset += (lastOffset-scrollView.contentOffset.y)/5;
+ topOffset = MIN(0, topOffset);
+ topBar.transform = CGAffineTransformMakeTranslation(0, topOffset);
+ 
+ float p = topOffset / -40;
+ backButton.alpha = 1-p;
+ }
+ }
+ 
+ lastOffset = scrollView.contentOffset.y;
+ */
 
 
 

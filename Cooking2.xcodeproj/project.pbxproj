@@ -8,6 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		FC7D4C591D772221000B19AC /* video-128.png in Resources */ = {isa = PBXBuildFile; fileRef = FC7D4C581D772221000B19AC /* video-128.png */; };
+		FCA663AE1D79A0B8006C1AF7 /* mainCell.m in Sources */ = {isa = PBXBuildFile; fileRef = FCA663AD1D79A0B8006C1AF7 /* mainCell.m */; };
+		FCA663B41D79AA40006C1AF7 /* 1472837819_star-half.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663B31D79AA40006C1AF7 /* 1472837819_star-half.png */; };
+		FCA663B61D79AA43006C1AF7 /* 1472837863_star-half-2.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663B51D79AA43006C1AF7 /* 1472837863_star-half-2.png */; };
+		FCA663B81D79AA47006C1AF7 /* 1472837884_star-empty.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663B71D79AA47006C1AF7 /* 1472837884_star-empty.png */; };
+		FCA663BA1D79AA71006C1AF7 /* star_full-128.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663B91D79AA71006C1AF7 /* star_full-128.png */; };
+		FCA663BC1D79AC01006C1AF7 /* cook.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663BB1D79AC01006C1AF7 /* cook.png */; };
+		FCA663BE1D79BEB6006C1AF7 /* prep.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663BD1D79BEB6006C1AF7 /* prep.png */; };
+		FCA663C01D79C0B7006C1AF7 /* chef-128.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663BF1D79C0B7006C1AF7 /* chef-128.png */; };
 		FCB2C65D1D744C6200594A59 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = FCB2C65C1D744C6200594A59 /* main.m */; };
 		FCB2C6601D744C6200594A59 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = FCB2C65F1D744C6200594A59 /* AppDelegate.m */; };
 		FCB2C6661D744C6200594A59 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FCB2C6641D744C6200594A59 /* Main.storyboard */; };
@@ -66,6 +74,15 @@
 
 /* Begin PBXFileReference section */
 		FC7D4C581D772221000B19AC /* video-128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "video-128.png"; sourceTree = "<group>"; };
+		FCA663AC1D79A0B8006C1AF7 /* mainCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mainCell.h; sourceTree = "<group>"; };
+		FCA663AD1D79A0B8006C1AF7 /* mainCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mainCell.m; sourceTree = "<group>"; };
+		FCA663B31D79AA40006C1AF7 /* 1472837819_star-half.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "1472837819_star-half.png"; sourceTree = "<group>"; };
+		FCA663B51D79AA43006C1AF7 /* 1472837863_star-half-2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "1472837863_star-half-2.png"; sourceTree = "<group>"; };
+		FCA663B71D79AA47006C1AF7 /* 1472837884_star-empty.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "1472837884_star-empty.png"; sourceTree = "<group>"; };
+		FCA663B91D79AA71006C1AF7 /* star_full-128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "star_full-128.png"; sourceTree = "<group>"; };
+		FCA663BB1D79AC01006C1AF7 /* cook.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cook.png; sourceTree = "<group>"; };
+		FCA663BD1D79BEB6006C1AF7 /* prep.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = prep.png; sourceTree = "<group>"; };
+		FCA663BF1D79C0B7006C1AF7 /* chef-128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "chef-128.png"; sourceTree = "<group>"; };
 		FCB2C6581D744C6200594A59 /* Cooking2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Cooking2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCB2C65C1D744C6200594A59 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		FCB2C65E1D744C6200594A59 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -217,6 +234,8 @@
 				FCB2C65F1D744C6200594A59 /* AppDelegate.m */,
 				FCB2C68E1D744C8300594A59 /* mainVC.h */,
 				FCB2C68F1D744C8300594A59 /* mainVC.m */,
+				FCA663AC1D79A0B8006C1AF7 /* mainCell.h */,
+				FCA663AD1D79A0B8006C1AF7 /* mainCell.m */,
 				FCB2C6A01D744D8000594A59 /* searchVC.h */,
 				FCB2C6A11D744D8000594A59 /* searchVC.m */,
 				FC7D4C5A1D773BF7000B19AC /* Open */,
@@ -289,6 +308,13 @@
 		FCB2C6B91D74500E00594A59 /* media */ = {
 			isa = PBXGroup;
 			children = (
+				FCA663BF1D79C0B7006C1AF7 /* chef-128.png */,
+				FCA663BD1D79BEB6006C1AF7 /* prep.png */,
+				FCA663BB1D79AC01006C1AF7 /* cook.png */,
+				FCA663B91D79AA71006C1AF7 /* star_full-128.png */,
+				FCA663B31D79AA40006C1AF7 /* 1472837819_star-half.png */,
+				FCA663B51D79AA43006C1AF7 /* 1472837863_star-half-2.png */,
+				FCA663B71D79AA47006C1AF7 /* 1472837884_star-empty.png */,
 				FCBF20621D75F8BD009F9BD7 /* camera-128.png */,
 				FC7D4C581D772221000B19AC /* video-128.png */,
 				FCBF20641D75FDDE009F9BD7 /* settings-120.png */,
@@ -413,12 +439,16 @@
 			files = (
 				FCB2C6C41D7454AD00594A59 /* bgvid.mp4 in Resources */,
 				FCBF20651D75FDDE009F9BD7 /* settings-120.png in Resources */,
+				FCA663BE1D79BEB6006C1AF7 /* prep.png in Resources */,
 				FCB2C6C21D74549600594A59 /* openBG.mp4 in Resources */,
 				FCBF205D1D74A52C009F9BD7 /* edit-128.png in Resources */,
 				FCB2C66B1D744C6200594A59 /* LaunchScreen.storyboard in Resources */,
 				FCBF205B1D74976F009F9BD7 /* close-120.png in Resources */,
+				FCA663B41D79AA40006C1AF7 /* 1472837819_star-half.png in Resources */,
 				FCBF20631D75F8BD009F9BD7 /* camera-128.png in Resources */,
+				FCA663C01D79C0B7006C1AF7 /* chef-128.png in Resources */,
 				FCBF20611D75945E009F9BD7 /* arrow_right-128.png in Resources */,
+				FCA663B81D79AA47006C1AF7 /* 1472837884_star-empty.png in Resources */,
 				FCB2C6681D744C6200594A59 /* Assets.xcassets in Resources */,
 				FCB2C6D01D746A5D00594A59 /* king.jpeg in Resources */,
 				FCB2C6C81D745D9800594A59 /* bgIV4.jpg in Resources */,
@@ -426,8 +456,11 @@
 				FCB2C6C61D7459EF00594A59 /* chef-512.png in Resources */,
 				FCBF20591D7491E9009F9BD7 /* search-128.png in Resources */,
 				FCB2C6BF1D7452EE00594A59 /* openBG.jpeg in Resources */,
+				FCA663BA1D79AA71006C1AF7 /* star_full-128.png in Resources */,
+				FCA663BC1D79AC01006C1AF7 /* cook.png in Resources */,
 				FCB2C6661D744C6200594A59 /* Main.storyboard in Resources */,
 				FCBF205F1D74D93C009F9BD7 /* add-120.png in Resources */,
+				FCA663B61D79AA43006C1AF7 /* 1472837863_star-half-2.png in Resources */,
 				FC7D4C591D772221000B19AC /* video-128.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -470,6 +503,7 @@
 				FCB2C6A21D744D8000594A59 /* searchVC.m in Sources */,
 				FCB2C6931D744CE500594A59 /* Peacock.m in Sources */,
 				FCB2C69C1D744D5600594A59 /* loginVC.m in Sources */,
+				FCA663AE1D79A0B8006C1AF7 /* mainCell.m in Sources */,
 				FCB2C6901D744C8300594A59 /* mainVC.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
