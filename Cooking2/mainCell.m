@@ -28,6 +28,7 @@
         _peacock = [Peacock sharedInstance];
         
         self.clipsToBounds = true;
+        self.userInteractionEnabled = true;
         
         w = frame.size.width;
         h = frame.size.height;
@@ -73,6 +74,7 @@
         [self addSubview:button];
         
         
+        
     }
     return self;
 }
@@ -81,9 +83,9 @@
     scoreLabel.text = @"#1 von 103 in Basel";
    // NSLog(@"user is %@", user);
     
-    NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/profile_thumb.jpg",user[@"userID"]];
-    UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
-    bgIV.image = image;
+   // NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/profile_thumb.jpg",user[@"userID"]];
+   // UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
+   // bgIV.image = image;
     
     float starHeight = 0;
     if (user[@"score"]){
@@ -126,9 +128,9 @@
     scoreLabel.text = @"#1 in Basel";
 
     
-    NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/%@/hero.jpg",recipe[@"userID"],recipe[@"recipeID"]];
-    UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
-    bgIV.image = image;
+  //  NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/%@/hero.jpg",recipe[@"userID"],recipe[@"recipeID"]];
+  //  UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
+  //  bgIV.image = image;
     
     float starHeight = 0;
     if (recipe[@"score"]){

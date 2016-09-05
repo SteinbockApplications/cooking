@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3964C9621D7C957800C8F6AD /* filterVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 3964C9611D7C957800C8F6AD /* filterVC.m */; };
 		FC7D4C591D772221000B19AC /* video-128.png in Resources */ = {isa = PBXBuildFile; fileRef = FC7D4C581D772221000B19AC /* video-128.png */; };
 		FCA663AE1D79A0B8006C1AF7 /* mainCell.m in Sources */ = {isa = PBXBuildFile; fileRef = FCA663AD1D79A0B8006C1AF7 /* mainCell.m */; };
 		FCA663B41D79AA40006C1AF7 /* 1472837819_star-half.png in Resources */ = {isa = PBXBuildFile; fileRef = FCA663B31D79AA40006C1AF7 /* 1472837819_star-half.png */; };
@@ -73,6 +74,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3964C9601D7C957800C8F6AD /* filterVC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filterVC.h; sourceTree = "<group>"; };
+		3964C9611D7C957800C8F6AD /* filterVC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = filterVC.m; sourceTree = "<group>"; };
 		FC7D4C581D772221000B19AC /* video-128.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "video-128.png"; sourceTree = "<group>"; };
 		FCA663AC1D79A0B8006C1AF7 /* mainCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mainCell.h; sourceTree = "<group>"; };
 		FCA663AD1D79A0B8006C1AF7 /* mainCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mainCell.m; sourceTree = "<group>"; };
@@ -238,6 +241,8 @@
 				FCA663AD1D79A0B8006C1AF7 /* mainCell.m */,
 				FCB2C6A01D744D8000594A59 /* searchVC.h */,
 				FCB2C6A11D744D8000594A59 /* searchVC.m */,
+				3964C9601D7C957800C8F6AD /* filterVC.h */,
+				3964C9611D7C957800C8F6AD /* filterVC.m */,
 				FC7D4C5A1D773BF7000B19AC /* Open */,
 				FC7D4C5C1D773C1E000B19AC /* Edit */,
 				FC7D4C5B1D773C09000B19AC /* Display */,
@@ -498,6 +503,7 @@
 				FCBF206B1D7618D9009F9BD7 /* Fish.m in Sources */,
 				FCB2C6AB1D744DBF00594A59 /* profileVC.m in Sources */,
 				FCB2C69F1D744D6300594A59 /* registerVC.m in Sources */,
+				3964C9621D7C957800C8F6AD /* filterVC.m in Sources */,
 				FCBF20571D747FD5009F9BD7 /* Dog.m in Sources */,
 				FCB2C6A51D744D9200594A59 /* recipeVC.m in Sources */,
 				FCB2C6A21D744D8000594A59 /* searchVC.m in Sources */,

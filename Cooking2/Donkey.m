@@ -15,6 +15,9 @@ static Donkey *sharedInstance = nil;
 
 @synthesize currentUser;
 @synthesize cantons;
+
+
+@synthesize ranges;
 @synthesize skillLevels;
 @synthesize courses;
 
@@ -68,6 +71,11 @@ static Donkey *sharedInstance = nil;
                     @"Hauptgericht",
                     @"Dessert",
                     @"Snack"];
+        
+        ranges = @[@"Alle",
+                   @"Heute",
+                   @"Woche",
+                   @"Monat"];
         
     }
     return self;
@@ -242,7 +250,7 @@ static Donkey *sharedInstance = nil;
 
 
 
--(NSArray *)sortUsersByScoreForCanton:(NSString *)canton forRange:(int)days {
+-(NSArray *)sortUsersByScoreForCanton:(NSString *)canton inRange:(int)days {
     
     //holds filtered users
     NSMutableArray * unsorted = [NSMutableArray new];
@@ -274,7 +282,7 @@ static Donkey *sharedInstance = nil;
     return sorted;
     
 }
--(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton forRange:(int)days {
+-(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton inRange:(int)days {
     
     //holds filtered users
     NSMutableArray * unsorted = [NSMutableArray new];

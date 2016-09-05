@@ -13,6 +13,9 @@
 @property NSDictionary * deviceUser;
 @property User * currentUser;
 @property NSArray * cantons;
+
+
+@property NSArray * ranges;
 @property NSArray * skillLevels;
 @property NSArray * courses;
 
@@ -26,6 +29,6 @@
 -(void)parseMeta:(NSDictionary *)meta;
 
 -(void)sortUserByScore;
--(NSArray *)sortUsersByScoreForCanton:(NSString *)canton forRange:(int)days;
--(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton forRange:(int)days;
+-(NSArray *)sortUsersByScoreForCanton:(NSString *)canton inRange:(int)days;
+-(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton inRange:(int)days;
 @end

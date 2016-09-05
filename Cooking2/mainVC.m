@@ -17,6 +17,9 @@
 #define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
 
 #import "mainCell.h"
+#import "filterVC.h"
+
+#import "chefVC.h"
 
 @interface mainVC () {
 
@@ -29,6 +32,7 @@
     chefVC * _chefVC;
     
     editVC * _editVC;
+    filterVC * _filterVC;
     
     float w;
     float h;
@@ -50,15 +54,11 @@
     NSMutableArray * cells;
     
     //
-    UIButton * groupOneButton;
-    UIButton * groupTwoButton;
-    
-    UIButton * filterOneButton;
-    UIButton * filterTwoButton;
-    NSString * filterOne;
-    NSString * filterTwo;
-    
-    
+    UIButton * rangeButton;
+    UIButton * cantonButton;
+    NSString * range;
+    NSString * canton;
+
     UISegmentedControl * seg;
 }
 
@@ -79,6 +79,7 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popOpenVC) name:@"kPopOpenVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popEditVC) name:@"kPopEditVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarAppearance:) name:@"kStatusBarAppearance" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popFilterVC:) name:@"kPopFilterVC" object:nil];
     
     _peacock = [Peacock sharedInstance];
     _donkey = [Donkey sharedInstance];
@@ -99,6 +100,7 @@
     mainScroller.showsHorizontalScrollIndicator = false;
     mainScroller.delegate = self;
     mainScroller.alwaysBounceVertical = true;
+    mainScroller.userInteractionEnabled = true;
     [self.view addSubview:mainScroller];
     
     contentView = [UIView new];
@@ -123,7 +125,7 @@
     NSDictionary *attributes = [NSDictionary dictionaryWithObject:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular] forKey:NSFontAttributeName];
     [seg setTitleTextAttributes:attributes forState:UIControlStateNormal];
     [seg addTarget:self action:@selector(changeGroup) forControlEvents:UIControlEventValueChanged];
-    [topBar addSubview:seg];
+   //[topBar addSubview:seg];
 
     UIButton * profileButton = [UIButton new];
     profileButton.frame = CGRectMake(w-50, 20, 40, 40);
@@ -147,28 +149,26 @@
     filterView.backgroundColor = [_peacock.appColour colorWithAlphaComponent:1.5f];
     [topBar addSubview:filterView];
     
-    filterOneButton = [UIButton new];
-    filterOneButton.frame = CGRectMake(0, 0, w/2, 40);
-    [filterOneButton setTitle:@"Alle" forState:UIControlStateNormal];
-    [filterOneButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [filterOneButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
-    [filterOneButton addTarget:self action:@selector(changeFilter:) forControlEvents:UIControlEventTouchUpInside];
-    [filterView addSubview:filterOneButton];
+    rangeButton = [UIButton new];
+    rangeButton.frame = CGRectMake(0, 0, w/2, 40);
+    [rangeButton setTitle:@"Alle" forState:UIControlStateNormal];
+    [rangeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [rangeButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
+    [rangeButton addTarget:self action:@selector(openFilter:) forControlEvents:UIControlEventTouchUpInside];
+    [filterView addSubview:rangeButton];
     
     UIImageView * filterDiv = [UIImageView new];
     filterDiv.frame = CGRectMake(w/2, 0, 0.5, 40);
     filterDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
     [filterView addSubview:filterDiv];
     
-    filterTwoButton = [UIButton new];
-    filterTwoButton.frame = CGRectMake(w/2, 0, w/2, 40);
-    [filterTwoButton setTitle:@"Schweizweit" forState:UIControlStateNormal];
-    [filterTwoButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [filterTwoButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
-    [filterTwoButton addTarget:self action:@selector(changeFilter:) forControlEvents:UIControlEventTouchUpInside];
-    [filterView addSubview:filterTwoButton];
-    
-    
+    cantonButton = [UIButton new];
+    cantonButton.frame = CGRectMake(w/2, 0, w/2, 40);
+    [cantonButton setTitle:@"Schweizweit" forState:UIControlStateNormal];
+    [cantonButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [cantonButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
+    [cantonButton addTarget:self action:@selector(openFilter:) forControlEvents:UIControlEventTouchUpInside];
+    [filterView addSubview:cantonButton];
     
     
     //ADD BUTTON
@@ -197,8 +197,8 @@
     }
     
     //set filter defaults
-    filterOne = @"-1";
-    filterTwo = @"all";
+    range = @"Alle";
+    canton = @"Schweizweit";
     selectedGroup = @"user";
     
     //set preferences
@@ -234,24 +234,81 @@
     [self refreshScroller];
     
 }
--(void)changeFilter:(UIButton *)button {
+-(void)openFilter:(UIButton *)button {
     
-    [self filterChanged];
+    //determine filter
+    NSString * filter = @"range";
+    NSString * selected = range;
+    if ([button isEqual:cantonButton]){
+        filter = @"canton";
+        selected = canton;
+    }
     
+    //create vc + set filter
+    _filterVC = [filterVC new];
+    [self addChildViewController:_filterVC];
+    [self.view addSubview:_filterVC.view];
+    [_filterVC beginWithFilter:filter withSelected:selected];
+    
+    //animate ui
+    _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _filterVC.view.transform = CGAffineTransformIdentity;
+                     }
+                     completion:^(BOOL finished){
+                     }];
+
 }
--(void)filterChanged {
+-(void)popFilterVC:(NSString *)filter {
+    
+    //animate ui
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
+                     }
+                     completion:^(BOOL finished){
+                     
+                         [_filterVC removeFromParentViewController];
+                         [_filterVC.view removeFromSuperview];
+                         _filterVC = nil;
+                         
+                     }];
+
+    NSLog(@"filters are: %@", filter);
+    
+    //
     
     [self refreshScroller];
 }
-
-
+-(int)daysForRange {
+    if ([range isEqualToString:@"Alle"]){
+        return -1;
+    } else if ([range isEqualToString:@"Heute"]){
+        return 1;
+    } else if ([range isEqualToString:@"Woche"]){
+        return 7;
+    } else if ([range isEqualToString:@"Monat"]){
+        return 31;
+    }
+    
+    return 0;
+}
 -(void)refreshScroller {
     
     //set list based on group
     if ([selectedGroup isEqualToString:@"user"]){ 
-        sortedListing = [_donkey sortUsersByScoreForCanton:filterTwo forRange:filterOne.intValue];
+        sortedListing = [_donkey sortUsersByScoreForCanton:@"all" inRange:-1];
     } else {
-        sortedListing = [_donkey sortRecipesByScoreForCanton:filterTwo forRange:filterOne.intValue];
+        sortedListing = [_donkey sortRecipesByScoreForCanton:@"all" inRange:[self daysForRange]];
     }
 
     //empty out
@@ -335,6 +392,8 @@
                     [cell updateForRecipe:d];
                 }
             
+                [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
+                
                 /*
                 //media
                 if ([cachedThumbs[n] isKindOfClass:[UIImage class]]){ //thumb is available
@@ -361,6 +420,7 @@
     }
     
     
+    contentView.frame = CGRectMake(0,0, w, cells.count*cellSize.height);
     mainScroller.contentSize = CGSizeMake(w, cells.count*cellSize.height);
     //NSLog(@"CELLS IS %@", cells);
     
@@ -380,6 +440,40 @@
     
 }
 
+
+-(void)cellClick:(UIButton *)button {
+    
+    NSLog(@"cell click");
+    
+    mainCell * cell = button.superview;
+    int index = (int)[cells indexOfObject:cell];
+    
+    NSLog(@"index is %i", index);
+    
+    if ([selectedGroup isEqualToString:@"user"]){
+        
+    }
+    //create vc + set chef
+    _chefVC = [chefVC new];
+    [self addChildViewController:_chefVC];
+    [self.view addSubview:_chefVC.view];
+    
+    
+    //animate ui
+    _chefVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _chefVC.view.transform = CGAffineTransformIdentity;
+                     }
+                     completion:^(BOOL finished){
+                     }];
+    
+    
+}
 -(void)search {
     
 }
@@ -390,6 +484,7 @@
     [self.view addSubview:_chefVC.view];
     
 }
+
 
 
 //EDIT (NEW RECIPE)
