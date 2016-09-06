@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface recipeVC : UIViewController
+@interface recipeVC : UIViewController <UIScrollViewDelegate>
 
 
 @end

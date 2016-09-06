@@ -12,7 +12,7 @@
 #import "openVC.h"
 #import "Donkey.h"
 #import "Dog.h"
-#import "chefVC.h"
+
 #import "editVC.h"
 #define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
 
@@ -20,6 +20,7 @@
 #import "filterVC.h"
 
 #import "chefVC.h"
+#import "recipeVC.h"
 
 @interface mainVC () {
 
@@ -30,6 +31,7 @@
     
     openVC * _openVC;
     chefVC * _chefVC;
+    recipeVC * _recipeVC;
     
     editVC * _editVC;
     filterVC * _filterVC;
@@ -81,6 +83,14 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarAppearance:) name:@"kStatusBarAppearance" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popFilterVC:) name:@"kPopFilterVC" object:nil];
     
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pushChefVC:) name:@"kPushChefVC" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popChefVC) name:@"kPopChefVC" object:nil];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pushRecipeVC:) name:@"kPushRecipeVC" object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popRecipeVC) name:@"kPopRecipeVC" object:nil];
+    
+
     _peacock = [Peacock sharedInstance];
     _donkey = [Donkey sharedInstance];
     _dog = [Dog sharedInstance];
@@ -441,18 +451,44 @@
 }
 
 
+
+-(void)search {
+    
+}
+-(void)profile {
+    
+    _chefVC = [chefVC new];
+    [self addChildViewController:_chefVC];
+    [self.view addSubview:_chefVC.view];
+    
+}
+
+
+
+//CHEF + RECIPE VC PUSH POP
 -(void)cellClick:(UIButton *)button {
     
     NSLog(@"cell click");
     
-    mainCell * cell = button.superview;
+    mainCell * cell = (mainCell *)button.superview;
     int index = (int)[cells indexOfObject:cell];
     
     NSLog(@"index is %i", index);
+    selectedGroup = @"recipe";
     
     if ([selectedGroup isEqualToString:@"user"]){
-        
+        [self pushChefVC:nil];
+    } else {
+        [self pushRecipeVC:nil];
     }
+    
+    
+    
+}
+-(void)pushChefVC:(NSNotification *)n{
+    
+    NSLog(@"PUSH CHEF VC");
+    
     //create vc + set chef
     _chefVC = [chefVC new];
     [self addChildViewController:_chefVC];
@@ -472,19 +508,68 @@
                      completion:^(BOOL finished){
                      }];
     
+}
+-(void)popChefVC {
+    
+    NSLog(@"POP CHEF VC");
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _chefVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+                     }
+                     completion:^(BOOL finished){
+                         [_chefVC removeFromParentViewController];
+                         [_chefVC.view removeFromSuperview];
+                         _chefVC = nil;
+                     }];
     
 }
--(void)search {
+-(void)pushRecipeVC:(NSNotification *)n{
     
+    NSLog(@"PUSH RECIPE VC");
+    
+    //create vc + set recipe
+    _recipeVC = [recipeVC new];
+    [self addChildViewController:_recipeVC];
+    [self.view addSubview:_recipeVC.view];
+    
+    
+    //animate ui
+    _recipeVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _recipeVC.view.transform = CGAffineTransformIdentity;
+                     }
+                     completion:^(BOOL finished){
+                     }];
 }
--(void)profile {
+-(void)popRecipeVC{
     
-    _chefVC = [chefVC new];
-    [self addChildViewController:_chefVC];
-    [self.view addSubview:_chefVC.view];
+        NSLog(@"POP RECIPE VC");
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _recipeVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+                     }
+                     completion:^(BOOL finished){
+                         [_recipeVC removeFromParentViewController];
+                         [_recipeVC.view removeFromSuperview];
+                         _recipeVC = nil;
+                     }];
     
-}
 
+    
+}
 
 
 //EDIT (NEW RECIPE)

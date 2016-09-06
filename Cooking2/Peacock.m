@@ -31,8 +31,8 @@ static Peacock *sharedInstance = nil;
         appleBlue = [self colourForHex:@"#007AFF"];
         tedRed = [self colourForHex:@"#E62B1D"];
         soundCloudOrange = [self colourForHex:@"#FF3F1B"];
-        appColour = [self colourForHex:@"#365F18"];
-        appColour = [self colourForHex:@"#5C00E6"];
+        //appColour = [self colourForHex:@"#365F18"];
+        //appColour = [self colourForHex:@"#5C00E6"];
         appColour = soundCloudOrange;
         
         //koreless purple #773275
