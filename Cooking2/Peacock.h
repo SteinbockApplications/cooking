@@ -29,4 +29,8 @@
 -(UIImage *)scaleImage:(UIImage *)image toMaxDimension:(float)max;
 -(UIImage *)rotateImage:(UIImage *)image byDegree:(float)degrees;
 -(UIImage*)unrotateImage:(UIImage*)image;
+
+//
+-(UIView *)starViewWithScore:(float)score ofColour:(UIColor *)colour forHeight:(float)height atPoint:(CGPoint)point;
+-(UIImageView *)breakerDotOfColour:(UIColor *)colour atPoint:(CGPoint)point;
 @end

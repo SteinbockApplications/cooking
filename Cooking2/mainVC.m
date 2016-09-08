@@ -22,8 +22,13 @@
 #import "chefVC.h"
 #import "recipeVC.h"
 
-@interface mainVC () {
 
+//
+#import "userCell.h"
+#import "recipeCell.h"
+
+@interface mainVC () {
+    
     Peacock * _peacock;
     Donkey * _donkey;
     Dog * _dog;
@@ -43,6 +48,7 @@
     UIButton * addButton;
     
     bool statusBarIsHidden;
+    bool statusBarIsLight;
     
     
     UIScrollView * mainScroller;
@@ -56,12 +62,26 @@
     NSMutableArray * cells;
     
     //
-    UIButton * rangeButton;
-    UIButton * cantonButton;
-    NSString * range;
-    NSString * canton;
 
-    UISegmentedControl * seg;
+    NSString * canton;
+    
+    
+    //
+    UIScrollView * newScroller;
+    UIScrollView * userScroller;
+    UIScrollView * recipeScroller;
+    
+    NSArray * sortedNew;
+    NSArray * sortedUsers;
+    NSArray * sortedRecipes;
+    
+    NSMutableArray * userCells;
+    NSMutableArray * recipeCells;
+    
+    int userTouchIndex;
+    UIView * userContentView;
+    int recipeTouchIndex;
+    UIView * recipeContentView;
 }
 
 @end
@@ -76,7 +96,7 @@
     [self begin];
 }
 -(void)setup{
- 
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(metaReady) name:@"kMetaReady" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popOpenVC) name:@"kPopOpenVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popEditVC) name:@"kPopEditVC" object:nil];
@@ -86,11 +106,11 @@
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pushChefVC:) name:@"kPushChefVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popChefVC) name:@"kPopChefVC" object:nil];
-
+    
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pushRecipeVC:) name:@"kPushRecipeVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popRecipeVC) name:@"kPopRecipeVC" object:nil];
     
-
+    
     _peacock = [Peacock sharedInstance];
     _donkey = [Donkey sharedInstance];
     _dog = [Dog sharedInstance];
@@ -102,83 +122,145 @@
 }
 -(void)layout{
     
-    self.view.backgroundColor = [UIColor blackColor];
+    self.view.backgroundColor = _peacock.appleGrey;
     
     mainScroller = [UIScrollView new];
-    mainScroller.frame = self.view.bounds;
+    mainScroller.frame = CGRectMake(0, 0, w, h);
+    mainScroller.contentSize = CGSizeMake(3*w, h);
+    mainScroller.pagingEnabled = true;
     mainScroller.showsVerticalScrollIndicator = false;
     mainScroller.showsHorizontalScrollIndicator = false;
-    mainScroller.delegate = self;
-    mainScroller.alwaysBounceVertical = true;
-    mainScroller.userInteractionEnabled = true;
+    //mainScroller.delegate = self;
+    mainScroller.alwaysBounceHorizontal = true;
     [self.view addSubview:mainScroller];
     
-    contentView = [UIView new];
-    [mainScroller addSubview:contentView];
+    UIView * labelView = [UIView new];
+    labelView.frame = CGRectMake(0, 0, w*3, 60);
+    labelView.backgroundColor = [UIColor whiteColor];
+    [mainScroller addSubview:labelView];
+    
+    UILabel * newLabel = [UILabel new];
+    newLabel.frame = CGRectMake(0, 10, w, 50);
+    newLabel.text = @"NEUES";
+    newLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    newLabel.textAlignment = NSTextAlignmentCenter;
+    [mainScroller addSubview:newLabel];
+    
+    newScroller = [UIScrollView new];
+    newScroller.frame = CGRectMake(0, 100, w, h-100);
+    newScroller.showsVerticalScrollIndicator = false;
+    newScroller.showsHorizontalScrollIndicator = false;
+    newScroller.delegate = self;
+    newScroller.alwaysBounceVertical = true;
+    [mainScroller addSubview:newScroller];
+    
+    UILabel * chefLabel = [UILabel new];
+    chefLabel.frame = CGRectMake(w, 10, w, 50);
+    chefLabel.text = @"KÖCHE";
+    chefLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    chefLabel.textAlignment = NSTextAlignmentCenter;
+    [mainScroller addSubview:chefLabel];
+    
+    userScroller = [UIScrollView new];
+    userScroller.frame = CGRectMake(w, 100, w, h-100);
+    userScroller.showsVerticalScrollIndicator = false;
+    userScroller.showsHorizontalScrollIndicator = false;
+    userScroller.delegate = self;
+    userScroller.alwaysBounceVertical = true;
+    [mainScroller addSubview:userScroller];
+    
+    userContentView = [UIView new];
+    userContentView.frame = userScroller.bounds;
+    [userScroller addSubview:userContentView];
+    
+    UILabel * recipeLabel = [UILabel new];
+    recipeLabel.frame = CGRectMake(w*2, 10, w, 50);
+    recipeLabel.text = @"REZEPTE";
+    recipeLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    recipeLabel.textAlignment = NSTextAlignmentCenter;
+    [mainScroller addSubview:recipeLabel];
+    
+    recipeScroller = [UIScrollView new];
+    recipeScroller.frame = CGRectMake(w*2, 100, w, h-100);
+    recipeScroller.showsVerticalScrollIndicator = false;
+    recipeScroller.showsHorizontalScrollIndicator = false;
+    recipeScroller.delegate = self;
+    recipeScroller.alwaysBounceVertical = true;
+    [mainScroller addSubview:recipeScroller];
+
+    recipeContentView = [UIView new];
+    recipeContentView.frame = recipeScroller.bounds;
+    [recipeScroller addSubview:recipeContentView];
     
     UIView * topBar = [UIView new];
-    topBar.frame = CGRectMake(0, 0, w, 110);
-    topBar.backgroundColor = _peacock.appColour;
+    topBar.frame = CGRectMake(0, 0, w, 100);
     [self.view addSubview:topBar];
     
-    UIButton * searchButton = [UIButton new];
-    searchButton.frame = CGRectMake(0, 20, 40, 40);
-    [searchButton setImage:[[UIImage imageNamed:@"search-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-    [searchButton setTintColor:[UIColor whiteColor]];
-    [searchButton setImageEdgeInsets:UIEdgeInsetsMake(5, 5, 5, 5)];
-    [searchButton addTarget:self action:@selector(search) forControlEvents:UIControlEventTouchUpInside];
-    [topBar addSubview:searchButton];
-
-    seg = [[UISegmentedControl alloc] initWithItems:@[@"Köche",@"Rezepte"]];
-    seg.frame = CGRectMake((w-200)/2, 25, 200, 30);
-    seg.tintColor = [UIColor whiteColor];
-    NSDictionary *attributes = [NSDictionary dictionaryWithObject:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular] forKey:NSFontAttributeName];
-    [seg setTitleTextAttributes:attributes forState:UIControlStateNormal];
-    [seg addTarget:self action:@selector(changeGroup) forControlEvents:UIControlEventValueChanged];
-   //[topBar addSubview:seg];
-
-    UIButton * profileButton = [UIButton new];
-    profileButton.frame = CGRectMake(w-50, 20, 40, 40);
-    [profileButton setImage:[[UIImage imageNamed:@"chef-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-    [profileButton setTintColor:[UIColor whiteColor]];
-    [profileButton addTarget:self action:@selector(profile) forControlEvents:UIControlEventTouchUpInside];
-    profileButton.layer.cornerRadius = 20;
-    profileButton.layer.borderColor = [UIColor whiteColor].CGColor;
-    profileButton.layer.borderWidth = 1.0f;
-    profileButton.clipsToBounds = true;
-    [topBar addSubview:profileButton];
-
+    CAGradientLayer * topBarGradient = [CAGradientLayer layer];
+    topBarGradient.frame = CGRectMake(0, 0, w, 60);
+    topBarGradient.colors = [NSArray arrayWithObjects:
+                       (id)[UIColor whiteColor].CGColor,
+                       (id)[UIColor whiteColor].CGColor,
+                       (id)[[UIColor whiteColor] colorWithAlphaComponent:(0.0f)].CGColor,
+                       (id)[UIColor whiteColor].CGColor,
+                       (id)[UIColor whiteColor].CGColor,
+                       nil];
+    topBarGradient.locations = @[@0.0,@0.2,@0.5,@0.8,@1.0];
+    topBarGradient.startPoint = CGPointMake(0.0f, 0.5f);
+    topBarGradient.endPoint = CGPointMake(1.0f, 0.5f);
+    [topBar.layer insertSublayer:topBarGradient atIndex:0];
+    
+    UIImageView * searchIV = [UIImageView new];
+    searchIV.frame = CGRectMake(10, 22, 30, 30);
+    searchIV.contentMode = UIViewContentModeScaleAspectFit;
+    searchIV.image = [[UIImage imageNamed:@"search-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    searchIV.tintColor = [[UIColor blackColor] colorWithAlphaComponent:0.2f];
+    [topBar addSubview:searchIV];
+    
+    UIImageView * profileIV = [UIImageView new];
+    profileIV.frame = CGRectMake(w-40, 22, 30, 30);
+    profileIV.layer.cornerRadius = 15.0f;
+    profileIV.contentMode = UIViewContentModeScaleAspectFit;
+    profileIV.clipsToBounds = true;
+    profileIV.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.2f];
+    [topBar addSubview:profileIV];
+    
+    UILabel * initialsLabel = [UILabel new];
+    initialsLabel.frame = profileIV.bounds;
+    initialsLabel.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightThin];
+    initialsLabel.textAlignment = NSTextAlignmentCenter;
+    initialsLabel.textColor = [UIColor whiteColor];
+    [profileIV addSubview:initialsLabel];
+    
+    initialsLabel.text = @"DG";
+    
+    UIView * cantonBar = [UIView new];
+    cantonBar.frame = CGRectMake(0, 60, w, 40);
+    cantonBar.backgroundColor = [UIColor whiteColor];
+    [topBar addSubview:cantonBar];
+    
     UIImageView * div = [UIImageView new];
-    div.frame = CGRectMake(0, 69, w, 0.5);
-    div.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
-    [topBar addSubview:div];
+    div.frame = CGRectMake(0, 0, w, 0.5f);
+    div.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
+    [cantonBar addSubview:div];
     
-    //FILTERS
-    UIView * filterView = [UIView new];
-    filterView.frame = CGRectMake(0, 70, w, 40);
-    filterView.backgroundColor = [_peacock.appColour colorWithAlphaComponent:1.5f];
-    [topBar addSubview:filterView];
+    UILabel * cantonLabel = [UILabel new];
+    cantonLabel.frame = cantonBar.bounds;
+    cantonLabel.text = @"SCHWEIZWEIT";
+    cantonLabel.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightThin];
+    cantonLabel.textAlignment = NSTextAlignmentCenter;
+    cantonLabel.textColor = [UIColor blackColor];
+    [cantonBar addSubview:cantonLabel];
     
-    rangeButton = [UIButton new];
-    rangeButton.frame = CGRectMake(0, 0, w/2, 40);
-    [rangeButton setTitle:@"Alle" forState:UIControlStateNormal];
-    [rangeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [rangeButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
-    [rangeButton addTarget:self action:@selector(openFilter:) forControlEvents:UIControlEventTouchUpInside];
-    [filterView addSubview:rangeButton];
-    
-    UIImageView * filterDiv = [UIImageView new];
-    filterDiv.frame = CGRectMake(w/2, 0, 0.5, 40);
-    filterDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
-    [filterView addSubview:filterDiv];
-    
-    cantonButton = [UIButton new];
-    cantonButton.frame = CGRectMake(w/2, 0, w/2, 40);
-    [cantonButton setTitle:@"Schweizweit" forState:UIControlStateNormal];
-    [cantonButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [cantonButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
-    [cantonButton addTarget:self action:@selector(openFilter:) forControlEvents:UIControlEventTouchUpInside];
-    [filterView addSubview:cantonButton];
+    UIButton * cantonButton = [UIButton new];
+    cantonButton.frame = cantonBar.bounds;
+    [cantonButton addTarget:self action:@selector(changeCanton) forControlEvents:UIControlEventTouchUpInside];
+    [cantonBar addSubview:cantonButton];
+
+    UIImageView * cantonDiv = [UIImageView new];
+    cantonDiv.frame = CGRectMake(0, 39.5, w, 0.5f);
+    cantonDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
+    [cantonBar addSubview:cantonDiv];
     
     
     //ADD BUTTON
@@ -200,79 +282,68 @@
 }
 -(void)begin{
     
-    //set seg defaults
-    seg.selectedSegmentIndex = 0;
-    if ([selectedGroup isEqualToString:@"recipe"]){
-        seg.selectedSegmentIndex = 1;
-    }
-    
     //set filter defaults
-    range = @"Alle";
     canton = @"Schweizweit";
-    selectedGroup = @"user";
     
-    //set preferences
-    if ([[NSUserDefaults standardUserDefaults] valueForKey:@"preferredListing"]){
-        selectedGroup = [[NSUserDefaults standardUserDefaults] valueForKey:@"preferredListing"];
-    }
-
     //fetch meta
     [_dog fetchMetaData];
     
     //load current user
     [_donkey loadCurrentUser];
-
+    
     //if there's no user, push openVC
     if (!_donkey.deviceUser){
         [self pushOpenVCShouldAnimate:false];
     } else {
         NSLog(@"load for this user: %@", _donkey.deviceUser);
     }
+
+    [self updateStatusBarAppearance:nil];
 }
 
 //DATA
 -(void)metaReady {
+    
+    [self sortData];
     [self refreshScroller];
+    
 }
 -(void)changeGroup {
-    
-    selectedGroup = @"user";
-    if (seg.selectedSegmentIndex == 1){
-        selectedGroup = @"recipe";
-    }
     
     [self refreshScroller];
     
 }
 -(void)openFilter:(UIButton *)button {
     
-    //determine filter
-    NSString * filter = @"range";
-    NSString * selected = range;
-    if ([button isEqual:cantonButton]){
-        filter = @"canton";
-        selected = canton;
-    }
+    /*
+     //determine filter
+     NSString * filter = @"range";
+     NSString * selected = range;
+     if ([button isEqual:cantonButton]){
+     filter = @"canton";
+     selected = canton;
+     }
+     
+     //create vc + set filter
+     _filterVC = [filterVC new];
+     [self addChildViewController:_filterVC];
+     [self.view addSubview:_filterVC.view];
+     [_filterVC beginWithFilter:filter withSelected:selected];
+     
+     //animate ui
+     _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
+     [UIView animateWithDuration:0.3f
+     delay:0.0f
+     usingSpringWithDamping:1.0f
+     initialSpringVelocity:0.8f
+     options:UIViewAnimationOptionAllowUserInteraction
+     animations:^{
+     _filterVC.view.transform = CGAffineTransformIdentity;
+     }
+     completion:^(BOOL finished){
+     }];
+     */
     
-    //create vc + set filter
-    _filterVC = [filterVC new];
-    [self addChildViewController:_filterVC];
-    [self.view addSubview:_filterVC.view];
-    [_filterVC beginWithFilter:filter withSelected:selected];
-    
-    //animate ui
-    _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
-    [UIView animateWithDuration:0.3f
-                          delay:0.0f
-         usingSpringWithDamping:1.0f
-          initialSpringVelocity:0.8f
-                        options:UIViewAnimationOptionAllowUserInteraction
-                     animations:^{
-                         _filterVC.view.transform = CGAffineTransformIdentity;
-                     }
-                     completion:^(BOOL finished){
-                     }];
-
 }
 -(void)popFilterVC:(NSString *)filter {
     
@@ -286,170 +357,256 @@
                          _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
                      }
                      completion:^(BOOL finished){
-                     
+                         
                          [_filterVC removeFromParentViewController];
                          [_filterVC.view removeFromSuperview];
                          _filterVC = nil;
                          
                      }];
-
+    
     NSLog(@"filters are: %@", filter);
     
     //
     
     [self refreshScroller];
 }
--(int)daysForRange {
-    if ([range isEqualToString:@"Alle"]){
-        return -1;
-    } else if ([range isEqualToString:@"Heute"]){
-        return 1;
-    } else if ([range isEqualToString:@"Woche"]){
-        return 7;
-    } else if ([range isEqualToString:@"Monat"]){
-        return 31;
-    }
+
+-(void)sortData {
     
-    return 0;
+    sortedUsers = [_donkey sortUsersForCanton:canton];
+    sortedRecipes = [_donkey sortRecipesForCanton:canton];
+    NSLog(@"sorted recipes is %@", sortedRecipes);
+    
 }
+
 -(void)refreshScroller {
     
-    //set list based on group
-    if ([selectedGroup isEqualToString:@"user"]){ 
-        sortedListing = [_donkey sortUsersByScoreForCanton:@"all" inRange:-1];
-    } else {
-        sortedListing = [_donkey sortRecipesByScoreForCanton:@"all" inRange:[self daysForRange]];
-    }
-
+    //USER
     //empty out
-    for (NSObject * obj in cells){
-        if ([obj isKindOfClass:[mainCell class]]){
-            mainCell * cell = (mainCell *)obj;
+    for (NSObject * obj in userCells){
+        if ([obj isKindOfClass:[userCell class]]){
+            userCell * cell = (userCell *)obj;
             [cell removeFromSuperview];
         }
     }
     
     //create new
-    cells = [NSMutableArray new];
-    for (int n = 0; n < sortedListing.count; n++){
-        [cells addObject:[NSObject new]];
+    userCells = [NSMutableArray new];
+    for (int n = 0; n < sortedUsers.count; n++){
+        [userCells addObject:[NSObject new]];
     }
     
     //force update
-    [self scrollViewDidScroll:mainScroller];
+    [self scrollViewDidScroll:userScroller];
     
+
+    //RECIPE
+    for (NSObject * obj in recipeCells){
+        if ([obj isKindOfClass:[recipeCell class]]){
+            recipeCell * cell = (recipeCell *)obj;
+            [cell removeFromSuperview];
+        }
+    }
+    
+    recipeCells = [NSMutableArray new];
+    for (int n = 0; n < sortedRecipes.count; n++){
+        [recipeCells addObject:[NSObject new]];
+    }
+    
+    [self scrollViewDidScroll:recipeScroller];
+
+    
+    //NEW
 }
+
 -(void)scrollViewDidScroll:(UIScrollView *)scrollView {
     
-    if (![scrollView isEqual:mainScroller]){
-        return;
-    }
     
     //set vars
     float topMargin = -h; //distance above y at which cells should disappear
     float bottomMargin = h; //distance below y + h at which cells should disappear
-    float y = mainScroller.contentOffset.y; //actual content offset
-    float tallyY = 110; //the running height of y offset for cells
-    float tallyX = 0;
-    CGSize cellSize = CGSizeMake(w, 200);
+    float y = scrollView.contentOffset.y; //actual content offset
+    float tallyY = 10; //the running height of y offset for cells
+    float tallyX = 10;
+    float padding = 10;
+    CGSize cellSize;
     
-    //KEY: update content size (moving counter scroll)
-    //contentView.transform = CGAffineTransformMakeTranslation(0, y);
-    
-    //add and remove cells depending on offset
-    for (int n = 0; n < cells.count; n++){
+    if ([scrollView isEqual:userScroller]){
+
+        cellSize = CGSizeMake(w, 80);
+
+           for (int n = 0; n < userCells.count; n++){
+               
+               bool isCell = false;
+               if ([userCells[n] isKindOfClass:[userCell class]]){ isCell = true; }
+               if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
+                   
+                   if (isCell){ //Removes the cells above if they exist
+                       [[userCells objectAtIndex:n] removeFromSuperview];
+                       [userCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                   }
+                   
+               } else if (tallyY > y + scrollView.frame.size.height + bottomMargin){ //cells below not meeting threshold
+                   
+                   if (isCell){ //Removes the cells below if they exist
+                       [[userCells objectAtIndex:n] removeFromSuperview];
+                       [userCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                   }
+                   
+               } else if (!isCell) {
+                           
+                       //create the cell, set frame and add to contentView
+                       userCell * cell = [[userCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width-2*tallyX, cellSize.height)];
+                       cell.layer.shouldRasterize = true;
+                       cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
+                       cell.opaque = true;
+                       cell.clipsToBounds = true;
+                       cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                       [userContentView addSubview:cell];
+                       
+                       //data
+                       NSDictionary * d = sortedUsers[n];
+                       [cell updateForUser:d];
+                       [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
+                       
+                       //replace NSObject with cell
+                       [userCells replaceObjectAtIndex:n withObject:cell];
+               }
+               
+               tallyY += cellSize.height + padding;
+               
+               userCell * cell = userCells[n];
+               if ([cell isKindOfClass:[userCell class]]){
+                   int deviation = abs(userTouchIndex - n);
+                   float delay = deviation * 0.03;
+                   float duration = 1.0f - delay;
+                   [UIView animateWithDuration:duration
+                                         delay:delay
+                        usingSpringWithDamping:0.8
+                         initialSpringVelocity:0.7
+                                       options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
+                                    animations:^{
+                                        cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                                    }
+                                    completion:^(BOOL finished){
+                                        
+                                    }];
+               }
+           }
         
+        userContentView.transform = CGAffineTransformMakeTranslation(0, y);
+        userContentView.frame = CGRectMake(0, 0, w, tallyY);
+        userScroller.contentSize = CGSizeMake(w, tallyY);
+        NSLog(@"User contentview is %@ and scroller is %@", userContentView, userScroller);
+
+    } else if ([scrollView isEqual:recipeScroller]){
         
-        //check if the object at the
-        //nth index is an allocated cell
-        bool isCell = false;
-        if ([cells[n] isKindOfClass:[mainCell class]]){ isCell = true; }
+        cellSize = CGSizeMake(w, 240);
         
-        if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
+        for (int n = 0; n < recipeCells.count; n++){
             
-            if (isCell){ //Removes the cells above if they exist
-                [[cells objectAtIndex:n] removeFromSuperview];
-                [cells replaceObjectAtIndex:n withObject:[NSObject new]];
-            }
-        } else if (tallyY > y + mainScroller.frame.size.height + bottomMargin){ //cells below not meeting threshold
-            
-            if (isCell){ //Removes the cells below if they exist
-                [[cells objectAtIndex:n] removeFromSuperview];
-                [cells replaceObjectAtIndex:n withObject:[NSObject new]];
-            }
-            
-        } else {
-            
-            //Create the cell if none exists
-            if (!isCell){
+            bool isCell = false;
+            if ([recipeCells[n] isKindOfClass:[recipeCell class]]){ isCell = true; }
+            if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
                 
-                NSLog(@"CREATE");
+                if (isCell){ //Removes the cells above if they exist
+                    [[recipeCells objectAtIndex:n] removeFromSuperview];
+                    [recipeCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                }
+                
+            } else if (tallyY > y + scrollView.frame.size.height + bottomMargin){ //cells below not meeting threshold
+                
+                if (isCell){ //Removes the cells below if they exist
+                    [[recipeCells objectAtIndex:n] removeFromSuperview];
+                    [recipeCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                }
+                
+            } else if (!isCell) {
                 
                 //create the cell, set frame and add to contentView
-                mainCell * cell = [[mainCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width, cellSize.height)];
+                recipeCell * cell = [[recipeCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width-2*tallyX, cellSize.height)];
                 cell.layer.shouldRasterize = true;
                 cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
                 cell.opaque = true;
                 cell.clipsToBounds = true;
-                cell.backgroundColor = [UIColor redColor];
-                [contentView addSubview:cell];
-                
+                cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                [recipeContentView addSubview:cell];
+
                 //data
-                NSDictionary * d = sortedListing[n];
-                if ([selectedGroup isEqualToString:@"user"]){
-                    [cell updateForUser:d];
-                } else {
-                    [cell updateForRecipe:d];
-                }
-            
+                NSDictionary * d = sortedRecipes[n];
+                [cell updateForRecipe:d];
                 [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
                 
-                /*
-                //media
-                if ([cachedThumbs[n] isKindOfClass:[UIImage class]]){ //thumb is available
-                    //if a file exists, show it now
-                    cell.iv.image = cachedThumbs[n];
-                } else {
-                    //otherwise pull it
-                    [_dog fetchFile:seal.thumbFN fromFolder:@"thumbs" callback:seal.thumbFN];
-                }
-                */
-                
                 //replace NSObject with cell
-                [cells replaceObjectAtIndex:n withObject:cell];
+                [recipeCells replaceObjectAtIndex:n withObject:cell];
+            }
+            
+            //increment tally
+            tallyY += cellSize.height + padding;
+            
+            //bounce
+            recipeCell * cell = recipeCells[n];
+            if ([cell isKindOfClass:[recipeCell class]]){
+                int deviation = abs(recipeTouchIndex - n);
+                float delay = deviation * 0.03;
+                float duration = 1.0f - delay;
+                [UIView animateWithDuration:duration
+                                      delay:delay
+                     usingSpringWithDamping:0.8
+                      initialSpringVelocity:0.7
+                                    options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
+                                 animations:^{
+                                     cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                                 }
+                                 completion:^(BOOL finished){
+                                     
+                                 }];
             }
         }
         
-        tallyX += cellSize.width;
-        if (tallyX >= w){
-            tallyX = 0;
-            tallyY += cellSize.height;
-            
+        recipeContentView.transform = CGAffineTransformMakeTranslation(0, y);
+        recipeContentView.frame = CGRectMake(0, 0, w, tallyY);
+        recipeScroller.contentSize = CGSizeMake(w, tallyY);
+        
+        NSLog(@"Recipe contentview is %@ and scroller is %@", recipeContentView, recipeScroller);
+        
+        /*
+        //parallax effect
+        float travelDistance = h + cellSize.height;
+        for (int n = 0; n < recipeCells.count; n++){
+            NSObject * obj = recipeCells[n];
+            if ([obj isKindOfClass:[recipeCell class]]){
+                recipeCell * cell = recipeCells[n];
+                float cellY = [recipeScroller convertPoint:cell.frame.origin toView:self.view].y+cellSize.height;
+                float p = cellY/travelDistance;
+                cell.recipeIV.transform = CGAffineTransformMakeTranslation(0, p*-30);
+            }
         }
-
+        */
     }
-    
-    
-    contentView.frame = CGRectMake(0,0, w, cells.count*cellSize.height);
-    mainScroller.contentSize = CGSizeMake(w, cells.count*cellSize.height);
-    //NSLog(@"CELLS IS %@", cells);
-    
 
-    //parallax effect
-    float travelDistance = h + cellSize.height;
-    for (int n = 0; n < cells.count; n++){
-        NSObject * obj = cells[n];
-        if ([obj isKindOfClass:[mainCell class]]){
-            mainCell * cell = cells[n];
-            float cellY = [contentView convertPoint:cell.frame.origin toView:self.view].y+cellSize.height;
-            float p = cellY/travelDistance; //percentage complete of vertical journey
-            cell.bgIV.transform = CGAffineTransformMakeTranslation(0, p*-30);
-        }
-    }
-    
     
 }
-
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    
+    if ([scrollView isEqual:userScroller]){
+        
+        //grab the location of the touch event
+        CGPoint location = [userScroller.panGestureRecognizer locationInView:userScroller];
+        int yTouch = location.y; //grab y coordinate
+        userTouchIndex = (yTouch - 10) / 90; //calculate the index of the cell
+         NSLog(@"index: %i", userTouchIndex);
+        
+        
+    } else if ([scrollView isEqual:recipeScroller]){
+        
+        //grab the location of the touch event
+        CGPoint location = [recipeScroller.panGestureRecognizer locationInView:recipeScroller];
+        int yTouch = location.y; //grab y coordinate
+        recipeTouchIndex = (yTouch -10) / 250; //calculate the index of the cell
+        NSLog(@"index: %i", recipeTouchIndex);
+    }
+}
 
 
 -(void)search {
@@ -552,7 +709,7 @@
 }
 -(void)popRecipeVC{
     
-        NSLog(@"POP RECIPE VC");
+    NSLog(@"POP RECIPE VC");
     [UIView animateWithDuration:0.3f
                           delay:0.0f
          usingSpringWithDamping:1.0f
@@ -567,7 +724,7 @@
                          _recipeVC = nil;
                      }];
     
-
+    
     
 }
 
@@ -634,27 +791,27 @@
 -(void)profileUpdated:(NSNotification *)n {
     
     /*
-    if (_openVC){
-        
-        [UIView animateWithDuration:0.6f
-                              delay:0.0f
-             usingSpringWithDamping:1.0f
-              initialSpringVelocity:0.8f
-                            options:UIViewAnimationOptionAllowUserInteraction
-                         animations:^{
-                             _openVC.view.transform = CGAffineTransformMakeTranslation(0, _openVC.view.frame.size.height);
-                         }
-                         completion:^(BOOL finished){
-                             
-                         }];
-        
-    }
-    */
+     if (_openVC){
+     
+     [UIView animateWithDuration:0.6f
+     delay:0.0f
+     usingSpringWithDamping:1.0f
+     initialSpringVelocity:0.8f
+     options:UIViewAnimationOptionAllowUserInteraction
+     animations:^{
+     _openVC.view.transform = CGAffineTransformMakeTranslation(0, _openVC.view.frame.size.height);
+     }
+     completion:^(BOOL finished){
+     
+     }];
+     
+     }
+     */
 }
 
 //OPEN
 -(void)pushOpenVCShouldAnimate:(bool)animate {
-
+    
     _openVC = [openVC new];
     [self addChildViewController:_openVC];
     [self.view addSubview:_openVC.view];
@@ -679,7 +836,7 @@
                          [_openVC removeFromParentViewController];
                          [_openVC.view removeFromSuperview];
                          _openVC = nil;
-                     
+                         
                      }];
     
     [self refreshScroller];
@@ -692,7 +849,9 @@
     [self setNeedsStatusBarAppearanceUpdate];
 }
 -(UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
+    
+    NSLog(@"PREF");
+    return UIStatusBarStyleDefault;
 }
 -(BOOL)prefersStatusBarHidden{
     return statusBarIsHidden;
@@ -738,7 +897,16 @@
  
  lastOffset = scrollView.contentOffset.y;
  */
-
+/*
+ //media
+ if ([cachedThumbs[n] isKindOfClass:[UIImage class]]){ //thumb is available
+ //if a file exists, show it now
+ cell.iv.image = cachedThumbs[n];
+ } else {
+ //otherwise pull it
+ [_dog fetchFile:seal.thumbFN fromFolder:@"thumbs" callback:seal.thumbFN];
+ }
+ */
 
 
 @end

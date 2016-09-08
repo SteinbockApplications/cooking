@@ -425,8 +425,7 @@
         float p = y / h;
         float a = MIN(0.3 + p, 0.8);
         cover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:a];
-        
-      
+
         a = MIN(p*4,0.8);
         topBar.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:a];
         

@@ -165,4 +165,46 @@ static Peacock *sharedInstance = nil;
     return newImage;
     
 }
+-(UIView *)starViewWithScore:(float)score ofColour:(UIColor *)colour forHeight:(float)height atPoint:(CGPoint)point {
+    
+    UIView * view = [UIView new];
+    
+    UIView * holder = [UIView new];
+    holder.clipsToBounds = true;
+    [view addSubview:holder];
+    
+    float localX = 0;
+    for (int n = 0; n < 5; n++){
+        UIImageView * starIV = [UIImageView new];
+        starIV.frame = CGRectMake(localX, 0, height, height);
+        starIV.contentMode = UIViewContentModeScaleAspectFit;
+        starIV.image = [[UIImage imageNamed:@"star_full-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        starIV.tintColor = colour;
+        [holder addSubview:starIV];
+        localX += height+5;
+    }
+    
+    float width = score * height + (int)score * 5;
+    holder.frame = CGRectMake(0, 0, width, height);
+    
+    UILabel * scoreLabel = [UILabel new];
+    scoreLabel.frame = CGRectMake(width+5, 0, 45, height);
+    scoreLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    scoreLabel.textColor = [colour colorWithAlphaComponent:0.8f];
+    scoreLabel.text = [NSString stringWithFormat:@"(%.1f)", score];
+    [view addSubview:scoreLabel];
+    
+    view.frame = CGRectMake(point.x, point.y, width + 50, height);
+    
+    return view;
+}
+-(UIImageView *)breakerDotOfColour:(UIColor *)colour atPoint:(CGPoint)point {
+    
+    UIImageView * dot = [UIImageView new];
+    dot.frame = CGRectMake(point.x, point.y, 10, 10);
+    dot.layer.cornerRadius = 5;
+    dot.backgroundColor = colour;
+    return dot;
+}
+
 @end

@@ -31,4 +31,9 @@
 -(void)sortUserByScore;
 -(NSArray *)sortUsersByScoreForCanton:(NSString *)canton inRange:(int)days;
 -(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton inRange:(int)days;
+
+
+//
+-(NSArray *)sortUsersForCanton:(NSString *)canton;
+-(NSArray *)sortRecipesForCanton:(NSString *)canton;
 @end

@@ -150,10 +150,10 @@ static Donkey *sharedInstance = nil;
     //go through the recipes
     for (NSMutableDictionary * recipe in recipeArray){
         
+        NSString * userName;
         NSString * recipeID = recipe[@"recipeID"];
-        recipes[recipeID] = recipe;
-        
         NSString * userID = recipe[@"userID"];
+        
         if (users[userID]){
             NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[userID]];
             NSMutableArray * existingRecipes = [NSMutableArray new];
@@ -161,7 +161,12 @@ static Donkey *sharedInstance = nil;
             [existingRecipes addObject:recipeID];
             mUser[@"recipes"]=existingRecipes;
             users[userID]=mUser;
+            userName = mUser[@"name"];
         }
+        
+        NSMutableDictionary * mRecipe = [[NSMutableDictionary alloc] initWithDictionary:recipe];
+        mRecipe[@"userName"]=userName;
+        recipes[recipeID] = mRecipe;
     }
     
     //pull the score data
@@ -307,6 +312,50 @@ static Donkey *sharedInstance = nil;
     //sort by score
     NSSortDescriptor * descriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
     NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[descriptor]];
+    return sorted;
+}
+
+
+-(NSArray *)sortUsersForCanton:(NSString *)canton {
+    
+    //holds filtered users
+    NSMutableArray * unsorted = [NSMutableArray new];
+    
+    //loop through pulling out values
+    for (NSDictionary * user in users.allValues){
+        NSString * location = user[@"location"];
+        if ([location isEqualToString:canton] || [canton isEqualToString:@"Schweizweit"]){
+            [unsorted addObject:user];
+        }
+    }
+    
+    //sort by score
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+    NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
+    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
+    
+    return sorted;
+}
+
+-(NSArray *)sortRecipesForCanton:(NSString *)canton {
+    
+    
+    //holds filtered recipes
+    NSMutableArray * unsorted = [NSMutableArray new];
+    
+    //loop through pulling out values
+    for (NSDictionary * user in recipes.allValues){
+        NSString * location = user[@"location"];
+        if ([location isEqualToString:canton] || [canton isEqualToString:@"Schweizweit"]){
+            [unsorted addObject:user];
+        }
+    }
+    
+    //sort by score
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+    NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
+    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
+    
     return sorted;
 }
 
