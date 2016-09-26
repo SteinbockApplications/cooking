@@ -24,6 +24,8 @@ static Donkey *sharedInstance = nil;
 @synthesize users;
 @synthesize recipes;
 
+
+@synthesize selectedCanton;
 + (Donkey *)sharedInstance {
     
     if (sharedInstance == nil) {
@@ -36,7 +38,8 @@ static Donkey *sharedInstance = nil;
     self = [super init];
     if (self) {
         
-           cantons = @[@"Aargau",
+           cantons = @[@"Schweizweit",
+                       @"Aargau",
                        @"Appenzell Ausserrhoden",
                        @"Appenzell Innerrhoden",
                        @"Basel-Landschaft",
@@ -83,15 +86,22 @@ static Donkey *sharedInstance = nil;
 
 -(void)saveCurrentUser {
 
+    [[NSUserDefaults standardUserDefaults] setObject:selectedCanton forKey:@"preferredCanton"];
     [[NSUserDefaults standardUserDefaults] setObject:deviceUser forKey:@"profile"];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
 }
 -(void)loadCurrentUser {
     
+    NSLog(@"LOAD");
+    
     if ([[NSUserDefaults standardUserDefaults] valueForKey:@"profile"]){
         deviceUser = [[NSUserDefaults standardUserDefaults] valueForKey:@"profile"];
-        
+    }
+    if ([[NSUserDefaults standardUserDefaults] valueForKey:@"preferredCanton"]){
+        selectedCanton = [[NSUserDefaults standardUserDefaults] valueForKey:@"preferredCanton"];
+    } else {
+        selectedCanton = @"Schweizweit";
     }
     
 }

@@ -74,7 +74,7 @@
 }
 -(void)updateForUser:(NSDictionary *)user {
     
-    NSLog(@"user is %@", user);
+    //NSLog(@"user is %@", user);
     
     //profile iv
     profileIV.image = [UIImage imageNamed:@"cookd.png"];

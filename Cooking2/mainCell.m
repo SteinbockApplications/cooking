@@ -124,7 +124,7 @@
 }
 -(void)updateForRecipe:(NSDictionary *)recipe {
     
-    NSLog(@"recipe is %@", recipe);
+   // NSLog(@"recipe is %@", recipe);
     scoreLabel.text = @"#1 in Basel";
 
     

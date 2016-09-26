@@ -12,8 +12,9 @@
 @interface Donkey : NSObject
 @property NSDictionary * deviceUser;
 @property User * currentUser;
-@property NSArray * cantons;
 
+@property NSArray * cantons;
+@property NSString * selectedCanton;
 
 @property NSArray * ranges;
 @property NSArray * skillLevels;

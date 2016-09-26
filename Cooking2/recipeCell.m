@@ -77,7 +77,7 @@
 }
 -(void)updateForRecipe:(NSDictionary *)recipe {
     
-    NSLog(@"recipe is %@", recipe);
+   // NSLog(@"recipe is %@", recipe);
     
 
     //profile iv

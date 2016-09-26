@@ -71,6 +71,8 @@
     UIScrollView * userScroller;
     UIScrollView * recipeScroller;
     
+    UIImageView * mainscrollerCover;
+    
     NSArray * sortedNew;
     NSArray * sortedUsers;
     NSArray * sortedRecipes;
@@ -82,6 +84,17 @@
     UIView * userContentView;
     int recipeTouchIndex;
     UIView * recipeContentView;
+    
+    //
+    UIView * cantonView;
+    UIScrollView * cantonScroller;
+    NSMutableArray * cantonLabels;
+    UIImageView * cantonCover;
+    bool cantonsAreShowing;
+    UILabel * cantonLabel;
+    
+    //
+    UIView * topBar;
 }
 
 @end
@@ -130,22 +143,9 @@
     mainScroller.pagingEnabled = true;
     mainScroller.showsVerticalScrollIndicator = false;
     mainScroller.showsHorizontalScrollIndicator = false;
-    //mainScroller.delegate = self;
     mainScroller.alwaysBounceHorizontal = true;
     [self.view addSubview:mainScroller];
-    
-    UIView * labelView = [UIView new];
-    labelView.frame = CGRectMake(0, 0, w*3, 60);
-    labelView.backgroundColor = [UIColor whiteColor];
-    [mainScroller addSubview:labelView];
-    
-    UILabel * newLabel = [UILabel new];
-    newLabel.frame = CGRectMake(0, 10, w, 50);
-    newLabel.text = @"NEUES";
-    newLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
-    newLabel.textAlignment = NSTextAlignmentCenter;
-    [mainScroller addSubview:newLabel];
-    
+
     newScroller = [UIScrollView new];
     newScroller.frame = CGRectMake(0, 100, w, h-100);
     newScroller.showsVerticalScrollIndicator = false;
@@ -153,14 +153,7 @@
     newScroller.delegate = self;
     newScroller.alwaysBounceVertical = true;
     [mainScroller addSubview:newScroller];
-    
-    UILabel * chefLabel = [UILabel new];
-    chefLabel.frame = CGRectMake(w, 10, w, 50);
-    chefLabel.text = @"KÖCHE";
-    chefLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
-    chefLabel.textAlignment = NSTextAlignmentCenter;
-    [mainScroller addSubview:chefLabel];
-    
+
     userScroller = [UIScrollView new];
     userScroller.frame = CGRectMake(w, 100, w, h-100);
     userScroller.showsVerticalScrollIndicator = false;
@@ -172,14 +165,7 @@
     userContentView = [UIView new];
     userContentView.frame = userScroller.bounds;
     [userScroller addSubview:userContentView];
-    
-    UILabel * recipeLabel = [UILabel new];
-    recipeLabel.frame = CGRectMake(w*2, 10, w, 50);
-    recipeLabel.text = @"REZEPTE";
-    recipeLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
-    recipeLabel.textAlignment = NSTextAlignmentCenter;
-    [mainScroller addSubview:recipeLabel];
-    
+
     recipeScroller = [UIScrollView new];
     recipeScroller.frame = CGRectMake(w*2, 100, w, h-100);
     recipeScroller.showsVerticalScrollIndicator = false;
@@ -192,19 +178,44 @@
     recipeContentView.frame = recipeScroller.bounds;
     [recipeScroller addSubview:recipeContentView];
     
-    UIView * topBar = [UIView new];
-    topBar.frame = CGRectMake(0, 0, w, 100);
+    
+    //ADD BUTTON
+    addButtonView = [UIView new];
+    addButtonView.frame = CGRectMake(w-80, h-80, 60, 60);
+    addButtonView.backgroundColor = _peacock.appColour;
+    addButtonView.layer.cornerRadius = 30.0f;
+    [self.view addSubview:addButtonView];
+    
+    addButton = [UIButton new];
+    addButton.frame = addButtonView.bounds;
+    [addButton setImage:[[UIImage imageNamed:@"add-120.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+    [addButton setTintColor:[UIColor whiteColor]];
+    [addButton setImageEdgeInsets:UIEdgeInsetsMake(15, 15, 15, 15)];
+    [addButton addTarget:self action:@selector(pushEditVC) forControlEvents:UIControlEventTouchUpInside];
+    [addButtonView addSubview:addButton];
+
+    mainscrollerCover = [UIImageView new];
+    mainscrollerCover.frame = self.view.bounds;
+    mainscrollerCover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
+    [self.view addSubview:mainscrollerCover];
+    
+    [self layoutCantonView];
+    
+    //TOPBAR
+    topBar = [UIView new];
+    topBar.frame = CGRectMake(0, 0, w, 60);
+    topBar.backgroundColor = [UIColor whiteColor];
     [self.view addSubview:topBar];
     
     CAGradientLayer * topBarGradient = [CAGradientLayer layer];
     topBarGradient.frame = CGRectMake(0, 0, w, 60);
     topBarGradient.colors = [NSArray arrayWithObjects:
-                       (id)[UIColor whiteColor].CGColor,
-                       (id)[UIColor whiteColor].CGColor,
-                       (id)[[UIColor whiteColor] colorWithAlphaComponent:(0.0f)].CGColor,
-                       (id)[UIColor whiteColor].CGColor,
-                       (id)[UIColor whiteColor].CGColor,
-                       nil];
+                             (id)[UIColor whiteColor].CGColor,
+                             (id)[UIColor whiteColor].CGColor,
+                             (id)[[UIColor whiteColor] colorWithAlphaComponent:(0.0f)].CGColor,
+                             (id)[UIColor whiteColor].CGColor,
+                             (id)[UIColor whiteColor].CGColor,
+                             nil];
     topBarGradient.locations = @[@0.0,@0.2,@0.5,@0.8,@1.0];
     topBarGradient.startPoint = CGPointMake(0.0f, 0.5f);
     topBarGradient.endPoint = CGPointMake(1.0f, 0.5f);
@@ -233,50 +244,53 @@
     [profileIV addSubview:initialsLabel];
     
     initialsLabel.text = @"DG";
-    
-    UIView * cantonBar = [UIView new];
-    cantonBar.frame = CGRectMake(0, 60, w, 40);
-    cantonBar.backgroundColor = [UIColor whiteColor];
-    [topBar addSubview:cantonBar];
-    
-    UIImageView * div = [UIImageView new];
-    div.frame = CGRectMake(0, 0, w, 0.5f);
-    div.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
-    [cantonBar addSubview:div];
-    
-    UILabel * cantonLabel = [UILabel new];
-    cantonLabel.frame = cantonBar.bounds;
-    cantonLabel.text = @"SCHWEIZWEIT";
-    cantonLabel.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightThin];
-    cantonLabel.textAlignment = NSTextAlignmentCenter;
-    cantonLabel.textColor = [UIColor blackColor];
-    [cantonBar addSubview:cantonLabel];
-    
-    UIButton * cantonButton = [UIButton new];
-    cantonButton.frame = cantonBar.bounds;
-    [cantonButton addTarget:self action:@selector(changeCanton) forControlEvents:UIControlEventTouchUpInside];
-    [cantonBar addSubview:cantonButton];
 
-    UIImageView * cantonDiv = [UIImageView new];
-    cantonDiv.frame = CGRectMake(0, 39.5, w, 0.5f);
-    cantonDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
-    [cantonBar addSubview:cantonDiv];
     
     
-    //ADD BUTTON
-    addButtonView = [UIView new];
-    addButtonView.frame = CGRectMake(w-80, h-80, 60, 60);
-    addButtonView.backgroundColor = _peacock.appColour;
-    addButtonView.layer.cornerRadius = 30.0f;
-    [self.view addSubview:addButtonView];
     
-    addButton = [UIButton new];
-    addButton.frame = addButtonView.bounds;
-    [addButton setImage:[[UIImage imageNamed:@"add-120.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-    [addButton setTintColor:[UIColor whiteColor]];
-    [addButton setImageEdgeInsets:UIEdgeInsetsMake(15, 15, 15, 15)];
-    [addButton addTarget:self action:@selector(pushEditVC) forControlEvents:UIControlEventTouchUpInside];
-    [addButtonView addSubview:addButton];
+    
+    /*
+     UIView * labelView = [UIView new];
+     labelView.frame = CGRectMake(0, 0, w*3, 60);
+     labelView.backgroundColor = [UIColor whiteColor];
+     [mainScroller addSubview:labelView];
+     
+     UILabel * newLabel = [UILabel new];
+     newLabel.frame = CGRectMake(0, 10, w, 50);
+     newLabel.text = @"NEUES";
+     newLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+     newLabel.textAlignment = NSTextAlignmentCenter;
+     [mainScroller addSubview:newLabel];
+     */
+    /*
+     UILabel * chefLabel = [UILabel new];
+     chefLabel.frame = CGRectMake(w, 10, w, 50);
+     chefLabel.text = @"KÖCHE";
+     chefLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+     chefLabel.textAlignment = NSTextAlignmentCenter;
+     [mainScroller addSubview:chefLabel];
+     */
+    /*
+     UILabel * recipeLabel = [UILabel new];
+     recipeLabel.frame = CGRectMake(w*2, 10, w, 50);
+     recipeLabel.text = @"REZEPTE";
+     recipeLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+     recipeLabel.textAlignment = NSTextAlignmentCenter;
+     [mainScroller addSubview:recipeLabel];
+     */
+    /*
+ */
+    
+  
+   
+    
+
+    
+
+    
+    
+    
+    
     
     
 }
@@ -295,7 +309,7 @@
     if (!_donkey.deviceUser){
         [self pushOpenVCShouldAnimate:false];
     } else {
-        NSLog(@"load for this user: %@", _donkey.deviceUser);
+     //   NSLog(@"load for this user: %@", _donkey.deviceUser);
     }
 
     [self updateStatusBarAppearance:nil];
@@ -375,7 +389,7 @@
     
     sortedUsers = [_donkey sortUsersForCanton:canton];
     sortedRecipes = [_donkey sortRecipesForCanton:canton];
-    NSLog(@"sorted recipes is %@", sortedRecipes);
+   // NSLog(@"sorted recipes is %@", sortedRecipes);
     
 }
 
@@ -497,11 +511,12 @@
         userContentView.transform = CGAffineTransformMakeTranslation(0, y);
         userContentView.frame = CGRectMake(0, 0, w, tallyY);
         userScroller.contentSize = CGSizeMake(w, tallyY);
-        NSLog(@"User contentview is %@ and scroller is %@", userContentView, userScroller);
+       // NSLog(@"User contentview is %@ and scroller is %@", userContentView, userScroller);
 
     } else if ([scrollView isEqual:recipeScroller]){
         
         cellSize = CGSizeMake(w, 240);
+        recipeContentView.transform = CGAffineTransformMakeTranslation(0, y);
         
         for (int n = 0; n < recipeCells.count; n++){
             
@@ -550,8 +565,8 @@
                 int deviation = abs(recipeTouchIndex - n);
                 float delay = deviation * 0.03;
                 float duration = 1.0f - delay;
-                [UIView animateWithDuration:duration
-                                      delay:delay
+                [UIView animateWithDuration:0.4
+                                      delay:0.3
                      usingSpringWithDamping:0.8
                       initialSpringVelocity:0.7
                                     options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
@@ -564,11 +579,11 @@
             }
         }
         
-        recipeContentView.transform = CGAffineTransformMakeTranslation(0, y);
+        
         recipeContentView.frame = CGRectMake(0, 0, w, tallyY);
         recipeScroller.contentSize = CGSizeMake(w, tallyY);
         
-        NSLog(@"Recipe contentview is %@ and scroller is %@", recipeContentView, recipeScroller);
+     //   NSLog(@"Recipe contentview is %@ and scroller is %@", recipeContentView, recipeScroller);
         
         /*
         //parallax effect
@@ -595,7 +610,7 @@
         CGPoint location = [userScroller.panGestureRecognizer locationInView:userScroller];
         int yTouch = location.y; //grab y coordinate
         userTouchIndex = (yTouch - 10) / 90; //calculate the index of the cell
-         NSLog(@"index: %i", userTouchIndex);
+        // NSLog(@"index: %i", userTouchIndex);
         
         
     } else if ([scrollView isEqual:recipeScroller]){
@@ -604,7 +619,7 @@
         CGPoint location = [recipeScroller.panGestureRecognizer locationInView:recipeScroller];
         int yTouch = location.y; //grab y coordinate
         recipeTouchIndex = (yTouch -10) / 250; //calculate the index of the cell
-        NSLog(@"index: %i", recipeTouchIndex);
+       //  NSLog(@"index: %i", recipeTouchIndex);
     }
 }
 
@@ -728,6 +743,198 @@
     
 }
 
+
+//CANTONS
+-(void)layoutCantonView {
+    
+    cantonView = [UIView new];
+    cantonView.frame = CGRectMake(0, -h+100, w, h);
+    cantonView.backgroundColor = _peacock.appleGrey;
+    [self.view addSubview:cantonView];
+    
+    //top cell (Schweizweit)
+    UIView * topCell = [UIView new];
+    topCell.frame = CGRectMake(0, 0, w, 80);
+    [cantonView addSubview:topCell];
+    
+    UILabel * topCellLabel = [UILabel new];
+    topCellLabel.frame = CGRectMake(20, 20, w-40, 60);
+    topCellLabel.font = [UIFont systemFontOfSize:14.0f weight:UIFontWeightBold];
+    topCellLabel.text = [_donkey.cantons[0] uppercaseString];
+    [topCell addSubview:topCellLabel];
+    
+    cantonLabels = [NSMutableArray new];
+    [cantonLabels addObject:topCellLabel];
+    
+    UIButton * topCellButton = [UIButton new];
+    topCellButton.frame = topCell.bounds;
+    [topCellButton addTarget:self action:@selector(cantonSelected:) forControlEvents:UIControlEventTouchUpInside];
+    [topCellButton setTag:0];
+    [topCell addSubview:topCellButton];
+    
+    UIImageView * topCellDiv = [UIImageView new];
+    topCellDiv.frame = CGRectMake(0, 79.5f, w, 0.5f);
+    topCellDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.3f];
+    [topCellButton addSubview:topCellDiv];
+    
+    //scroller
+    cantonScroller = [UIScrollView new];
+    cantonScroller.frame = CGRectMake(0, 80, w, h-120);
+    cantonScroller.showsVerticalScrollIndicator = false;
+    cantonScroller.showsHorizontalScrollIndicator = false;
+    [cantonView addSubview:cantonScroller];
+    
+    //layout the cells
+    float yOff = 0;
+    for (int n = 1; n<_donkey.cantons.count; n++){
+        
+        NSString * cantonString = [_donkey.cantons[n] uppercaseString];
+        
+        UIView * cell = [UIView new];
+        cell.frame = CGRectMake(0, yOff, w, 40);
+        [cantonScroller addSubview:cell];
+        
+        UILabel * label = [UILabel new];
+        label.frame = CGRectMake(20, 0, w-40, 40);
+        label.font = [UIFont systemFontOfSize:14.0f weight:UIFontWeightBold];
+        label.text = cantonString;
+        [cell addSubview:label];
+        [cantonLabels addObject:label];
+        
+        UIButton * button = [UIButton new];
+        button.frame = cell.bounds;
+        [button addTarget:self action:@selector(cantonSelected:) forControlEvents:UIControlEventTouchUpInside];
+        [button setTag:n];
+        [cell addSubview:button];
+        
+        UIImageView * div = [UIImageView new];
+        div.frame = CGRectMake(20, 39.5f, w-20, 0.5f);
+        div.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
+        [cell addSubview:div];
+        
+        if (n == _donkey.cantons.count-1){
+            div.alpha = 0.0f;
+        }
+        
+        yOff += 40;
+    }
+    
+    //update the size
+    cantonScroller.contentSize = CGSizeMake(w, yOff);
+    
+    //canton cover
+    cantonCover = [UIImageView new];
+    cantonCover.frame = CGRectMake(0, 0, w, h-40);
+    cantonCover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.3f];
+    [cantonView addSubview:cantonCover];
+    
+    //bar
+    UIView * cantonBar = [UIView new];
+    cantonBar.frame = CGRectMake(0, h-40, w, 40);
+    cantonBar.backgroundColor = [UIColor whiteColor];
+    [cantonView addSubview:cantonBar];
+    
+    UIImageView * div = [UIImageView new];
+    div.frame = CGRectMake(0, 0, w, 0.5f);
+    div.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
+    [cantonBar addSubview:div];
+    
+    cantonLabel = [UILabel new];
+    cantonLabel.frame = CGRectMake(0, 0, w, 40);
+    cantonLabel.font = [UIFont systemFontOfSize:14.0f weight:UIFontWeightBold];
+    cantonLabel.textAlignment = NSTextAlignmentCenter;
+    cantonLabel.textColor = [UIColor blackColor];
+    [cantonBar addSubview:cantonLabel];
+    
+    UIImageView * cantonArrow = [UIImageView new];
+    cantonArrow.frame = CGRectMake(0, w-40, 40, 40);
+    cantonArrow.image = [UIImage imageNamed:<#(nonnull NSString *)#>]
+    
+    UIButton * toggleCantonButton = [UIButton new];
+    toggleCantonButton.frame = cantonLabel.bounds;
+    [toggleCantonButton addTarget:self action:@selector(toggleCantonSelection) forControlEvents:UIControlEventTouchUpInside];
+    [cantonBar addSubview:toggleCantonButton];
+    
+    UIImageView * cantonDiv = [UIImageView new];
+    cantonDiv.frame = CGRectMake(0, 39.5, w, 0.5f);
+    cantonDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
+    [cantonBar addSubview:cantonDiv];
+
+}
+-(void)toggleCantonSelection {
+
+    if (cantonsAreShowing){
+        cantonsAreShowing = false;
+        [UIView animateWithDuration:0.8f
+                              delay:0.0f
+             usingSpringWithDamping:1.0f
+              initialSpringVelocity:0.8f
+                            options:UIViewAnimationOptionAllowUserInteraction
+                         animations:^{
+                             topBar.transform = CGAffineTransformIdentity;
+                             cantonView.transform = CGAffineTransformIdentity;
+                             cantonCover.alpha = 1.0f;
+                             mainscrollerCover.alpha = 0.0f;
+                         }
+                         completion:^(BOOL finished){
+                         }];
+        
+    } else {
+        
+        cantonsAreShowing = true;
+        [UIView animateWithDuration:0.8f
+                              delay:0.0f
+             usingSpringWithDamping:1.0f
+              initialSpringVelocity:0.8f
+                            options:UIViewAnimationOptionAllowUserInteraction
+                         animations:^{
+                             topBar.transform = CGAffineTransformMakeTranslation(0, -60);
+                             cantonView.transform = CGAffineTransformMakeTranslation(0, h-100);
+                             cantonCover.alpha = 0.0f;
+                             mainscrollerCover.alpha = 1.0f;
+                         }
+                         completion:^(BOOL finished){
+                         }];
+    }
+}
+-(void)cantonSelected:(UIButton *)button {
+    
+    _donkey.selectedCanton = _donkey.cantons[button.tag];
+    [_donkey saveCurrentUser];
+    [self updateForSelectedCanton];
+}
+-(void)updateForSelectedCanton {
+    
+    //update canton scroller label colour
+    int index = (int)[_donkey.cantons indexOfObject:_donkey.selectedCanton];
+
+    //deselect all but selected label
+    for (int n = 0; n<cantonLabels.count; n++ ){
+        
+        UILabel * label = cantonLabels[n];
+        if (n == index){
+            label.textColor = _peacock.appColour;
+        } else {
+            label.textColor = [UIColor blackColor];
+        }
+    }
+
+    //update the canton label
+    [UIView transitionWithView:cantonLabel
+                      duration:0.5f
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        cantonLabel.text = _donkey.selectedCanton.uppercaseString;
+                    }
+                    completion:^(BOOL finished){
+                    }];
+
+    //toggle the closing
+    if (cantonsAreShowing){
+       [self toggleCantonSelection];
+    }
+    
+}
 
 //EDIT (NEW RECIPE)
 -(void)pushEditVC {
