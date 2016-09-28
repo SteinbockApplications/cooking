@@ -9,5 +9,5 @@
 #import <UIKit/UIKit.h>
 
 @interface chefVC : UIViewController <UIScrollViewDelegate>
-
+-(void)beginWithUserID:(NSString *)userID;
 @end

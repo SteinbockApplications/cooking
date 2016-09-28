@@ -26,6 +26,9 @@ static Donkey *sharedInstance = nil;
 
 
 @synthesize selectedCanton;
+@synthesize cantonUsers;
+@synthesize cantonRecipes;
+
 + (Donkey *)sharedInstance {
     
     if (sharedInstance == nil) {
@@ -86,7 +89,6 @@ static Donkey *sharedInstance = nil;
 
 -(void)saveCurrentUser {
 
-    [[NSUserDefaults standardUserDefaults] setObject:selectedCanton forKey:@"preferredCanton"];
     [[NSUserDefaults standardUserDefaults] setObject:deviceUser forKey:@"profile"];
     [[NSUserDefaults standardUserDefaults] synchronize];
     
@@ -95,15 +97,16 @@ static Donkey *sharedInstance = nil;
     
     NSLog(@"LOAD");
     
+    //load user profile if available
     if ([[NSUserDefaults standardUserDefaults] valueForKey:@"profile"]){
         deviceUser = [[NSUserDefaults standardUserDefaults] valueForKey:@"profile"];
     }
+    //load canton if available
+    selectedCanton = @"Schweizweit";
     if ([[NSUserDefaults standardUserDefaults] valueForKey:@"preferredCanton"]){
         selectedCanton = [[NSUserDefaults standardUserDefaults] valueForKey:@"preferredCanton"];
-    } else {
-        selectedCanton = @"Schweizweit";
     }
-    
+
 }
 -(void)parseMeta:(NSDictionary *)meta {
 
@@ -136,6 +139,7 @@ static Donkey *sharedInstance = nil;
      scores = []
      }
      */
+    //NSLog(@"meta is %@", meta);
     
     
     //pull the user data
@@ -161,27 +165,38 @@ static Donkey *sharedInstance = nil;
     for (NSMutableDictionary * recipe in recipeArray){
         
         NSString * userName;
+        NSString * location;
         NSString * recipeID = recipe[@"recipeID"];
         NSString * userID = recipe[@"userID"];
         
+        //pull the user data for that recipe
         if (users[userID]){
+            //create a mutable --> add existing recipes
             NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[userID]];
             NSMutableArray * existingRecipes = [NSMutableArray new];
             [existingRecipes addObjectsFromArray:mUser[@"recipes"]];
             [existingRecipes addObject:recipeID];
+            //save back in
             mUser[@"recipes"]=existingRecipes;
             users[userID]=mUser;
+            //set the user name
             userName = mUser[@"name"];
+            location = mUser[@"location"];
         }
         
+        //create a mutable
         NSMutableDictionary * mRecipe = [[NSMutableDictionary alloc] initWithDictionary:recipe];
+        //add and set
+        mRecipe[@"location"]= location;
         mRecipe[@"userName"]=userName;
         recipes[recipeID] = mRecipe;
     }
     
+    //SCORING
     //pull the score data
     NSMutableArray * scoreArray = [[NSMutableArray alloc] initWithArray:meta[@"scores"]];
-
+    float scoreTally = 0.0f;
+    
     //loop through adding in the scores
     for (NSDictionary * score in scoreArray){
         
@@ -193,6 +208,7 @@ static Donkey *sharedInstance = nil;
         //set the score for the reviewer ID
         //as this is displayed when the user
         //visits this recipe
+        //--> setting the score this user has set for the other recipe id
         if (users[reviewerID]){
             NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[reviewerID]];
             NSMutableDictionary * existingScores = [NSMutableDictionary new];
@@ -204,6 +220,7 @@ static Donkey *sharedInstance = nil;
         //set the score for the recipe ID
         //this is used to calculate the
         //mean average score for the recipe
+        //--> setting the score for this recipe
         if (recipes[recipeID]){
             NSMutableDictionary * mRecipe = [[NSMutableDictionary alloc] initWithDictionary:recipes[recipeID]];
             NSMutableArray * existingScores = [NSMutableArray new];
@@ -215,6 +232,7 @@ static Donkey *sharedInstance = nil;
         
         //set the score for the user ID
         //this is calculated at the end
+        //--> set the score for the user herself
         if (users[userID]){
             NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[userID]];
             NSMutableArray * existingScores = [NSMutableArray new];
@@ -223,22 +241,37 @@ static Donkey *sharedInstance = nil;
             mUser[@"scores"]=existingScores;
             users[userID]=mUser;
         }
+        
+        //used to calculate total mean
+        scoreTally += review.floatValue;
     }
     
+    //WEIGHTED SCORING (number of votes, mean vote)
+    //need to calculate mean scores for all
+    float overalMeanScore = scoreTally / scoreArray.count;
+    float minimumVotesRequired = 3.0f;
+
     //calculate averages
     for (NSMutableDictionary * user in users.allValues){
         if (user[@"scores"]){
             
-            //calculate mean
-            float total = 0.0f;
+            //pull data
             NSArray * scores = user[@"scores"];
+            
+            //calculate mean --> calculate across all reviews
+            float total = 0.0f;
+            int votes = (int)scores.count;
             for (NSString * scoreString in scores){ total += scoreString.floatValue;}
-            float mean = total / scores.count;
+            float mean = total / votes;
+            
+            //Bayesian estimate
+            float weightedAverage = (votes / (votes + minimumVotesRequired)) * mean + (minimumVotesRequired / (votes + minimumVotesRequired)) * overalMeanScore;
         
-            //save in
+            //save in for the user
             user[@"scores"]=nil;
-            user[@"scoreCount"]=[NSString stringWithFormat:@"%i",(int)scores.count];
+            user[@"votes"]=[NSString stringWithFormat:@"%i",votes];
             user[@"score"]=[NSString stringWithFormat:@"%f",mean];
+            user[@"weighted"]=[NSString stringWithFormat:@"%f",weightedAverage];
             users[user[@"userID"]]=user;
         }
     }
@@ -247,85 +280,48 @@ static Donkey *sharedInstance = nil;
         
         if (recipe[@"scores"]){
             
-            //calculate mean
-            float total = 0.0f;
+            //pull data
             NSArray * scores = recipe[@"scores"];
-            for (NSString * scoreString in scores){ total += scoreString.floatValue;}
-            float mean = total / scores.count;
             
-            //save in
+            //calculate mean --> calculate across all reviews
+            float total = 0.0f;
+            int votes = (int)scores.count;
+            for (NSString * scoreString in scores){ total += scoreString.floatValue;}
+            float mean = total / votes;
+            
+            //Bayesian estimate
+            float weightedAverage = (votes / (votes + minimumVotesRequired)) * mean + (minimumVotesRequired / (votes + minimumVotesRequired)) * overalMeanScore;
+        
+            //save in for the recipe
             recipe[@"score"]=[NSString stringWithFormat:@"%f",mean];
+            recipe[@"votes"]=[NSString stringWithFormat:@"%i",votes];
+            recipe[@"weighted"]=[NSString stringWithFormat:@"%f",weightedAverage];
             recipes[recipe[@"recipeID"]]=recipe;
         }
     }
     
     [[NSNotificationCenter defaultCenter] postNotificationName:@"kMetaReady" object:nil];
+ 
+    NSLog(@"recipes is %@", recipes);
     
 }
 
 
-
--(NSArray *)sortUsersByScoreForCanton:(NSString *)canton inRange:(int)days {
+-(void)setPreferredCanton:(NSString *)canton {
     
-    //holds filtered users
-    NSMutableArray * unsorted = [NSMutableArray new];
+    //set new canton and save
+    selectedCanton = canton;
+    [[NSUserDefaults standardUserDefaults] setObject:selectedCanton forKey:@"preferredCanton"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
     
-    //create range timestamp
-    NSDate * rangeDate = [[NSDate date] dateByAddingTimeInterval:-86400*days];
-    NSString * rangeTimestamp = [NSString stringWithFormat:@"%.0f",[rangeDate timeIntervalSince1970]];
-
-    //loop through pulling out values
-    for (NSDictionary * user in users.allValues){
-        
-        NSString * location = user[@"location"];
-        if ([location isEqualToString:canton] || [canton.lowercaseString isEqualToString:@"all"]){
-            
-            NSString * timestamp = user[@"createTS"];
-            if (timestamp.floatValue > rangeTimestamp.floatValue || days == -1){
-                [unsorted addObject:user];
-            }
-        }
-    }
-
-    //sort by score
-    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
-    NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
-    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
-    
-    
-    
-    return sorted;
-    
+    //sort the local values
+    [self sortDataForPreferredCanton];
 }
--(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton inRange:(int)days {
-    
-    //holds filtered users
-    NSMutableArray * unsorted = [NSMutableArray new];
-    
-    //create range timestamp
-    NSDate * rangeDate = [[NSDate date] dateByAddingTimeInterval:-86400*days];
-    NSString * rangeTimestamp = [NSString stringWithFormat:@"%.0f",[rangeDate timeIntervalSince1970]];
-    
-    //loop through pulling out values
-    for (NSDictionary * user in recipes.allValues){
-        
-        NSString * location = user[@"location"];
-        if ([location isEqualToString:canton] || [canton.lowercaseString isEqualToString:@"all"]){
-            
-            NSString * timestamp = user[@"createTS"];
-            if (timestamp.floatValue > rangeTimestamp.floatValue || days == -1){
-                [unsorted addObject:user];
-            }
-        }
-    }
-    
-    //sort by score
-    NSSortDescriptor * descriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
-    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[descriptor]];
-    return sorted;
+-(void)sortDataForPreferredCanton {
+
+    cantonUsers = [self sortUsersForCanton:selectedCanton];
+    cantonRecipes = [self sortRecipesForCanton:selectedCanton];
 }
-
-
 -(NSArray *)sortUsersForCanton:(NSString *)canton {
     
     //holds filtered users
@@ -340,34 +336,124 @@ static Donkey *sharedInstance = nil;
     }
     
     //sort by score
-    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
-    NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
-    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
-    
-    return sorted;
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"weighted" ascending:false];
+    return [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor]];
 }
-
 -(NSArray *)sortRecipesForCanton:(NSString *)canton {
-    
-    
+
     //holds filtered recipes
     NSMutableArray * unsorted = [NSMutableArray new];
     
     //loop through pulling out values
-    for (NSDictionary * user in recipes.allValues){
-        NSString * location = user[@"location"];
+    for (NSDictionary * recipe in recipes.allValues){
+        NSString * location = recipe[@"location"];
         if ([location isEqualToString:canton] || [canton isEqualToString:@"Schweizweit"]){
-            [unsorted addObject:user];
+            [unsorted addObject:recipe];
         }
     }
     
-    //sort by score
-    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
-    NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
-    NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
+    NSLog(@"unsorted is %@", unsorted);
     
-    return sorted;
+    //sort by score
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"weighted" ascending:false];
+    return [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor]];
+
+}
+-(NSDictionary *)rankingForRecipe:(NSString *)recipeID {
+    
+    NSDictionary * recipe = recipes[recipeID];
+    NSString * userID = recipe[@"userID"];
+    NSDictionary * user = users[userID];
+    NSString * location = user[@"location"];
+    
+    NSArray * national = [self sortRecipesForCanton:@"Schweizweit"];
+    NSArray * canton = [self sortRecipesForCanton:location];
+    NSLog(@"CANTONS IS %@", canton);
+    
+    int nationalRank = (int)national.count;
+    for (NSDictionary * d in national){
+        if ([d[@"recipeID"] isEqualToString:recipeID]){
+            nationalRank = (int)[national indexOfObject:d]+1;
+            break;
+        }
+    }
+    int cantonRank = (int)canton.count;
+    for (NSDictionary * d in canton){
+        if ([d[@"recipeID"] isEqualToString:recipeID]){
+            cantonRank = (int)[canton indexOfObject:d]+1;
+            break;
+        }
+    }
+    
+    return @{@"national":[NSNumber numberWithInt:nationalRank],@"canton":[NSNumber numberWithInt:cantonRank]};
 }
 
+/*
+ -(void)sortForRanking:(NSArray *)array {
+
+}
+
+
+ -(NSArray *)sortUsersByScoreForCanton:(NSString *)canton inRange:(int)days {
+ 
+ //holds filtered users
+ NSMutableArray * unsorted = [NSMutableArray new];
+ 
+ //create range timestamp
+ NSDate * rangeDate = [[NSDate date] dateByAddingTimeInterval:-86400*days];
+ NSString * rangeTimestamp = [NSString stringWithFormat:@"%.0f",[rangeDate timeIntervalSince1970]];
+ 
+ //loop through pulling out values
+ for (NSDictionary * user in users.allValues){
+ 
+ NSString * location = user[@"location"];
+ if ([location isEqualToString:canton] || [canton.lowercaseString isEqualToString:@"all"]){
+ 
+ NSString * timestamp = user[@"createTS"];
+ if (timestamp.floatValue > rangeTimestamp.floatValue || days == -1){
+ [unsorted addObject:user];
+ }
+ }
+ }
+ 
+ //sort by score
+ NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+ NSSortDescriptor * reviewDescriptor = [[NSSortDescriptor alloc] initWithKey:@"scoreCount" ascending:false];
+ NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor, reviewDescriptor]];
+ 
+ 
+ 
+ return sorted;
+ 
+ }
+ -(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton inRange:(int)days {
+ 
+ //holds filtered users
+ NSMutableArray * unsorted = [NSMutableArray new];
+ 
+ //create range timestamp
+ NSDate * rangeDate = [[NSDate date] dateByAddingTimeInterval:-86400*days];
+ NSString * rangeTimestamp = [NSString stringWithFormat:@"%.0f",[rangeDate timeIntervalSince1970]];
+ 
+ //loop through pulling out values
+ for (NSDictionary * user in recipes.allValues){
+ 
+ NSString * location = user[@"location"];
+ if ([location isEqualToString:canton] || [canton.lowercaseString isEqualToString:@"all"]){
+ 
+ NSString * timestamp = user[@"createTS"];
+ if (timestamp.floatValue > rangeTimestamp.floatValue || days == -1){
+ [unsorted addObject:user];
+ }
+ }
+ }
+ 
+ //sort by score
+ NSSortDescriptor * descriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+ NSArray * sorted = [unsorted sortedArrayUsingDescriptors:@[descriptor]];
+ return sorted;
+ }
+
+ */
 
 @end

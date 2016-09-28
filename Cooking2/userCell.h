@@ -11,5 +11,5 @@
 @interface userCell : UIView
 @property UIImageView * profileIV;
 @property UIButton * button;
--(void)updateForUser:(NSDictionary *)user;
+-(void)updateForUser:(NSDictionary *)user atRank:(int)rank;
 @end

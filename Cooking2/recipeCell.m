@@ -17,6 +17,7 @@
     
     UILabel * titleLabel;
     UILabel * subtitleLabel;
+    UILabel * noScoreLabel;
     UILabel * rankLabel;
     
 }
@@ -43,6 +44,12 @@
         recipeIV.frame = CGRectMake(0, 0, w, 190);
         recipeIV.contentMode = UIViewContentModeScaleAspectFill;
         [recipeIVHolder addSubview:recipeIV];
+        
+        noScoreLabel = [UILabel new];
+        noScoreLabel.frame = CGRectMake(10, 170, w-20, 20.0f);
+        noScoreLabel.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightThin];
+        noScoreLabel.textColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
+        [self addSubview:noScoreLabel];
         
         rankLabel = [UILabel new];
         rankLabel.frame = CGRectMake(10, 170, w-20, 20.0f);
@@ -75,30 +82,50 @@
     }
     return self;
 }
--(void)updateForRecipe:(NSDictionary *)recipe {
+-(void)updateForRecipe:(NSDictionary *)recipe atRank:(int)rank {
     
    // NSLog(@"recipe is %@", recipe);
     
 
+    //pull data
+    NSString * recipeName = recipe[@"recipeName"];
+    NSString * userName = recipe[@"userName"];
+    float score = [recipe[@"score"] floatValue];
+    int votes = [recipe[@"votes"] intValue];
+    
+
     //profile iv
-    recipeIV.image = [UIImage imageNamed:@"recipe.png"];
+    //recipeIV.image = [UIImage imageNamed:@"recipe.png"];
     // NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/profile_thumb.jpg",user[@"userID"]];
     // UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
     // bgIV.image = image;
-    
+
     //star view
-    UIView * starView = [_peacock starViewWithScore:3.50f ofColour:_peacock.appColour forHeight:15.0f atPoint:CGPointMake(10, 170)];
-    [self addSubview:starView];
-    
-    
-    //rank label
-    rankLabel.text = @"#1";
-    
-    //title label
-    titleLabel.text = recipe[@"recipeName"];
-    
-    //subtitle
-    subtitleLabel.text = recipe[@"userName"];
+    if (votes < 3){
+        
+        noScoreLabel.text = @"Zu wenige Bewertungen";
+        
+        //title label
+        titleLabel.text = recipeName;
+        
+        //subtitle
+        subtitleLabel.text = userName;
+        
+    } else {
+        
+        UIView * starView = [_peacock starViewWithScore:score ofColour:_peacock.appColour votes:votes ofColour:_peacock.appleDark forHeight:15.0f atPoint:CGPointMake(10, 170)];
+        [self addSubview:starView];
+        
+        //rank label
+        rankLabel.text = [NSString stringWithFormat:@"#%i", rank];
+        
+        //title label
+        titleLabel.text = recipeName;
+        
+        //subtitle
+        subtitleLabel.text = userName;
+    }
+
 
     
 }

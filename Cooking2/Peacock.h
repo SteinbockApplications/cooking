@@ -32,5 +32,10 @@
 
 //
 -(UIView *)starViewWithScore:(float)score ofColour:(UIColor *)colour forHeight:(float)height atPoint:(CGPoint)point;
+-(UIView *)starViewWithScore:(float)score ofColour:(UIColor *)sColour votes:(int)votes ofColour:(UIColor *)vColour forHeight:(float)height atPoint:(CGPoint)point;
+
+
+-(NSString *)initialsForName:(NSString *)name;
+
 -(UIImageView *)breakerDotOfColour:(UIColor *)colour atPoint:(CGPoint)point;
 @end

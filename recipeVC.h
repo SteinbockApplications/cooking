@@ -9,6 +9,6 @@
 #import <UIKit/UIKit.h>
 
 @interface recipeVC : UIViewController <UIScrollViewDelegate>
-
+-(void)beginWithRecipeID:(NSString *)recipeID;
 
 @end

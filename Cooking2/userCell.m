@@ -17,6 +17,8 @@
     
     UILabel * titleLabel;
     UILabel * subtitleLabel;
+    UILabel * profileLabel;
+    UILabel * noScoreLabel;
     UILabel * rankLabel;
     
 }
@@ -33,14 +35,32 @@
         
         self.backgroundColor = [UIColor whiteColor];
         
+        UIView * profileCircle = [UIView new];
+        profileCircle.frame = CGRectMake(10, 10, 60, 60);
+        profileCircle.layer.cornerRadius = 30.0f;
+        profileCircle.backgroundColor = _peacock.appleGrey;
+        [self addSubview:profileCircle];
+        
+        profileLabel = [UILabel new];
+        profileLabel.frame = profileCircle.bounds;
+        profileLabel.font = [UIFont systemFontOfSize:20.0f weight:UIFontWeightBold];
+        profileLabel.textColor = [UIColor whiteColor];
+        profileLabel.textAlignment = NSTextAlignmentCenter;
+        [profileCircle addSubview:profileLabel];
+        
         profileIV = [UIImageView new];
-        profileIV.frame = CGRectMake(10, 10, 60, 60);
+        profileIV.frame = profileCircle.bounds;
         profileIV.contentMode = UIViewContentModeScaleAspectFill;
         profileIV.clipsToBounds = true;
         profileIV.layer.cornerRadius = 30.0f;
-        profileIV.backgroundColor = _peacock.appleDark;
-        [self addSubview:profileIV];
+        [profileCircle addSubview:profileIV];
 
+        noScoreLabel = [UILabel new];
+        noScoreLabel.frame = CGRectMake(80, 10, w-90, 20.0f);
+        noScoreLabel.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightThin];
+        noScoreLabel.textColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
+        [self addSubview:noScoreLabel];
+        
         rankLabel = [UILabel new];
         rankLabel.frame = CGRectMake(80, 10, w-90, 20.0f);
         rankLabel.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightThin];
@@ -72,31 +92,64 @@
     }
     return self;
 }
--(void)updateForUser:(NSDictionary *)user {
+-(void)updateForUser:(NSDictionary *)user atRank:(int)rank {
     
     //NSLog(@"user is %@", user);
+
+    //pull data
+    NSString * name = user[@"name"];
+    NSString * location = user[@"location"];
+    float score = [user[@"score"] floatValue];
+    int votes = [user[@"votes"] intValue];
     
-    //profile iv
-    profileIV.image = [UIImage imageNamed:@"cookd.png"];
+    //pull initials--> set label text
+    NSString * first = [name substringToIndex:1];
+    NSString * second = @"";
+    NSArray * split = [name componentsSeparatedByString:@" "];
+    if (split.count > 1){
+        second = [split[split.count-1] substringToIndex:1];
+    }
+    profileLabel.text = [NSString stringWithFormat:@"%@%@", first, second];
+    
+    //set image
+    //profileIV.image = [UIImage imageNamed:@"cookd.png"];
     // NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/profile_thumb.jpg",user[@"userID"]];
     // UIImage *image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
     // bgIV.image = image;
     
     
     //star view
-    UIView * starView = [_peacock starViewWithScore:4.70f ofColour:_peacock.appColour forHeight:15.0f atPoint:CGPointMake(80, 10)];
-    [self addSubview:starView];
+    if (votes < 3){
+        
+        noScoreLabel.text = @"Zu wenige Bewertungen";
     
-    //rank label
-    rankLabel.text = @"#1";
+        //title label
+        titleLabel.text = name;
+        
+        //subtitle
+        subtitleLabel.text = location;
     
-    //title label
-    titleLabel.text = user[@"name"];
+    } else {
+        
+        UIView * starView = [_peacock starViewWithScore:score ofColour:_peacock.appColour votes:votes ofColour:_peacock.appleDark forHeight:15.0f atPoint:CGPointMake(80, 10)];
+        [self addSubview:starView];
+        
+        //rank label
+        rankLabel.text = [NSString stringWithFormat:@"#%i", rank];
+        
+        //title label
+        titleLabel.text = name;
+        
+        //subtitle
+        subtitleLabel.text = location;
+    }
 
-    //subtitle
-    subtitleLabel.text = user[@"location"];
+    
+
 
 
 }
+
+
 
 @end

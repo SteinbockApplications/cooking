@@ -11,5 +11,5 @@
 @interface recipeCell : UIView
 @property UIImageView * recipeIV;
 @property UIButton * button;
--(void)updateForRecipe:(NSDictionary *)recipe;
+-(void)updateForRecipe:(NSDictionary *)recipe atRank:(int)rank;
 @end

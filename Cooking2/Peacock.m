@@ -198,6 +198,46 @@ static Peacock *sharedInstance = nil;
     
     return view;
 }
+
+-(UIView *)starViewWithScore:(float)score
+                     ofColour:(UIColor *)sColour
+                       votes:(int)votes
+                     ofColour:(UIColor *)vColour
+                   forHeight:(float)height
+                     atPoint:(CGPoint)point {
+    
+    UIView * view = [UIView new];
+    
+    UIView * holder = [UIView new];
+    holder.clipsToBounds = true;
+    [view addSubview:holder];
+    
+    float localX = 0;
+    for (int n = 0; n < 5; n++){
+        UIImageView * starIV = [UIImageView new];
+        starIV.frame = CGRectMake(localX, 0, height, height);
+        starIV.contentMode = UIViewContentModeScaleAspectFit;
+        starIV.image = [[UIImage imageNamed:@"star_full-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        starIV.tintColor = sColour;
+        [holder addSubview:starIV];
+        localX += height+5;
+    }
+    
+    float width = score * height + (int)score * 5;
+    holder.frame = CGRectMake(0, 0, width, height);
+    
+    UILabel * voteLabel = [UILabel new];
+    voteLabel.frame = CGRectMake(width+5, 0, 45, height);
+    voteLabel.font = [UIFont systemFontOfSize:height weight:UIFontWeightThin];
+    voteLabel.textColor = vColour;
+    voteLabel.text = [NSString stringWithFormat:@"(%i)", votes];
+    [view addSubview:voteLabel];
+    
+    view.frame = CGRectMake(point.x, point.y, width + 50, height);
+    
+    return view;
+}
+
 -(UIImageView *)breakerDotOfColour:(UIColor *)colour atPoint:(CGPoint)point {
     
     UIImageView * dot = [UIImageView new];
@@ -206,5 +246,18 @@ static Peacock *sharedInstance = nil;
     dot.backgroundColor = colour;
     return dot;
 }
+
+-(NSString *)initialsForName:(NSString *)name {
+    
+    //pull initials--> set label text
+    NSString * first = [name substringToIndex:1];
+    NSString * second = @"";
+    NSArray * split = [name componentsSeparatedByString:@" "];
+    if (split.count > 1){
+        second = [split[split.count-1] substringToIndex:1];
+    }
+ return [NSString stringWithFormat:@"%@%@", first, second];
+}
+
 
 @end

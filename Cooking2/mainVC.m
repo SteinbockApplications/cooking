@@ -92,9 +92,13 @@
     UIImageView * cantonCover;
     bool cantonsAreShowing;
     UILabel * cantonLabel;
+    UIImageView * cantonArrow;
     
     //
     UIView * topBar;
+    
+    //
+    int page;
 }
 
 @end
@@ -114,8 +118,6 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popOpenVC) name:@"kPopOpenVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popEditVC) name:@"kPopEditVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateStatusBarAppearance:) name:@"kStatusBarAppearance" object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popFilterVC:) name:@"kPopFilterVC" object:nil];
-    
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pushChefVC:) name:@"kPushChefVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popChefVC) name:@"kPopChefVC" object:nil];
@@ -123,83 +125,67 @@
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(pushRecipeVC:) name:@"kPushRecipeVC" object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(popRecipeVC) name:@"kPopRecipeVC" object:nil];
     
-    
     _peacock = [Peacock sharedInstance];
     _donkey = [Donkey sharedInstance];
     _dog = [Dog sharedInstance];
     
     w = self.view.frame.size.width;
     h = self.view.frame.size.height;
-    
-    
+
 }
 -(void)layout{
     
     self.view.backgroundColor = _peacock.appleGrey;
     
-    mainScroller = [UIScrollView new];
-    mainScroller.frame = CGRectMake(0, 0, w, h);
-    mainScroller.contentSize = CGSizeMake(3*w, h);
-    mainScroller.pagingEnabled = true;
-    mainScroller.showsVerticalScrollIndicator = false;
-    mainScroller.showsHorizontalScrollIndicator = false;
-    mainScroller.alwaysBounceHorizontal = true;
-    [self.view addSubview:mainScroller];
-
-    newScroller = [UIScrollView new];
-    newScroller.frame = CGRectMake(0, 100, w, h-100);
-    newScroller.showsVerticalScrollIndicator = false;
-    newScroller.showsHorizontalScrollIndicator = false;
-    newScroller.delegate = self;
-    newScroller.alwaysBounceVertical = true;
-    [mainScroller addSubview:newScroller];
-
-    userScroller = [UIScrollView new];
-    userScroller.frame = CGRectMake(w, 100, w, h-100);
-    userScroller.showsVerticalScrollIndicator = false;
-    userScroller.showsHorizontalScrollIndicator = false;
-    userScroller.delegate = self;
-    userScroller.alwaysBounceVertical = true;
-    [mainScroller addSubview:userScroller];
-    
-    userContentView = [UIView new];
-    userContentView.frame = userScroller.bounds;
-    [userScroller addSubview:userContentView];
-
-    recipeScroller = [UIScrollView new];
-    recipeScroller.frame = CGRectMake(w*2, 100, w, h-100);
-    recipeScroller.showsVerticalScrollIndicator = false;
-    recipeScroller.showsHorizontalScrollIndicator = false;
-    recipeScroller.delegate = self;
-    recipeScroller.alwaysBounceVertical = true;
-    [mainScroller addSubview:recipeScroller];
-
-    recipeContentView = [UIView new];
-    recipeContentView.frame = recipeScroller.bounds;
-    [recipeScroller addSubview:recipeContentView];
-    
-    
-    //ADD BUTTON
-    addButtonView = [UIView new];
-    addButtonView.frame = CGRectMake(w-80, h-80, 60, 60);
-    addButtonView.backgroundColor = _peacock.appColour;
-    addButtonView.layer.cornerRadius = 30.0f;
-    [self.view addSubview:addButtonView];
-    
-    addButton = [UIButton new];
-    addButton.frame = addButtonView.bounds;
-    [addButton setImage:[[UIImage imageNamed:@"add-120.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
-    [addButton setTintColor:[UIColor whiteColor]];
-    [addButton setImageEdgeInsets:UIEdgeInsetsMake(15, 15, 15, 15)];
-    [addButton addTarget:self action:@selector(pushEditVC) forControlEvents:UIControlEventTouchUpInside];
-    [addButtonView addSubview:addButton];
-
-    mainscrollerCover = [UIImageView new];
-    mainscrollerCover.frame = self.view.bounds;
-    mainscrollerCover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
-    [self.view addSubview:mainscrollerCover];
-    
+    [self layoutScrollers];
+    [self layoutAddButton];
     [self layoutCantonView];
+    [self layoutTopBar];
+
+
+}
+-(void)begin{
+    
+    //load current user
+    [_donkey loadCurrentUser];
+    
+    //fetch meta
+    [_dog fetchMetaData];
+
+    //if there's no user, push openVC
+    if (!_donkey.deviceUser){
+        [self pushOpenVCShouldAnimate:false];
+    } else {
+        NSLog(@"load for this user: %@", _donkey.deviceUser);
+    }
+
+    //set initial ui
+    [self updateStatusBarAppearance:nil];
+    [mainscrollerCover setAlpha:0.0f];
+} //requests meta from dog
+
+//DATA
+-(void)metaReady {
+    
+    //update the data + ui
+    [self cantonDidChange]; //uses  preferred canton
+    
+} //meta has returned --> update data + ui (cantonDidChange)
+-(void)cantonDidChange {
+    
+    //update the data
+    [_donkey sortDataForPreferredCanton];
+    
+    //update the ui
+    [self refreshScroller];
+    [self updateUIForSelectedCanton];
+    
+    //NSLog(@"_donkey users is %@", _donkey.cantonUsers);
+    
+} //updates data for canton + updates ui
+
+//TOPBAR
+-(void)layoutTopBar {
     
     //TOPBAR
     topBar = [UIView new];
@@ -244,7 +230,7 @@
     [profileIV addSubview:initialsLabel];
     
     initialsLabel.text = @"DG";
-
+    
     
     
     
@@ -279,470 +265,15 @@
      [mainScroller addSubview:recipeLabel];
      */
     /*
- */
-    
-  
-   
-    
-
-    
-
-    
-    
-    
-    
-    
-    
-}
--(void)begin{
-    
-    //set filter defaults
-    canton = @"Schweizweit";
-    
-    //fetch meta
-    [_dog fetchMetaData];
-    
-    //load current user
-    [_donkey loadCurrentUser];
-    
-    //if there's no user, push openVC
-    if (!_donkey.deviceUser){
-        [self pushOpenVCShouldAnimate:false];
-    } else {
-     //   NSLog(@"load for this user: %@", _donkey.deviceUser);
-    }
-
-    [self updateStatusBarAppearance:nil];
-}
-
-//DATA
--(void)metaReady {
-    
-    [self sortData];
-    [self refreshScroller];
-    
-}
--(void)changeGroup {
-    
-    [self refreshScroller];
-    
-}
--(void)openFilter:(UIButton *)button {
-    
-    /*
-     //determine filter
-     NSString * filter = @"range";
-     NSString * selected = range;
-     if ([button isEqual:cantonButton]){
-     filter = @"canton";
-     selected = canton;
-     }
-     
-     //create vc + set filter
-     _filterVC = [filterVC new];
-     [self addChildViewController:_filterVC];
-     [self.view addSubview:_filterVC.view];
-     [_filterVC beginWithFilter:filter withSelected:selected];
-     
-     //animate ui
-     _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
-     [UIView animateWithDuration:0.3f
-     delay:0.0f
-     usingSpringWithDamping:1.0f
-     initialSpringVelocity:0.8f
-     options:UIViewAnimationOptionAllowUserInteraction
-     animations:^{
-     _filterVC.view.transform = CGAffineTransformIdentity;
-     }
-     completion:^(BOOL finished){
-     }];
      */
     
 }
--(void)popFilterVC:(NSString *)filter {
-    
-    //animate ui
-    [UIView animateWithDuration:0.3f
-                          delay:0.0f
-         usingSpringWithDamping:1.0f
-          initialSpringVelocity:0.8f
-                        options:UIViewAnimationOptionAllowUserInteraction
-                     animations:^{
-                         _filterVC.view.transform = CGAffineTransformMakeTranslation(0, h);
-                     }
-                     completion:^(BOOL finished){
-                         
-                         [_filterVC removeFromParentViewController];
-                         [_filterVC.view removeFromSuperview];
-                         _filterVC = nil;
-                         
-                     }];
-    
-    NSLog(@"filters are: %@", filter);
-    
-    //
-    
-    [self refreshScroller];
-}
-
--(void)sortData {
-    
-    sortedUsers = [_donkey sortUsersForCanton:canton];
-    sortedRecipes = [_donkey sortRecipesForCanton:canton];
-   // NSLog(@"sorted recipes is %@", sortedRecipes);
-    
-}
-
--(void)refreshScroller {
-    
-    //USER
-    //empty out
-    for (NSObject * obj in userCells){
-        if ([obj isKindOfClass:[userCell class]]){
-            userCell * cell = (userCell *)obj;
-            [cell removeFromSuperview];
-        }
-    }
-    
-    //create new
-    userCells = [NSMutableArray new];
-    for (int n = 0; n < sortedUsers.count; n++){
-        [userCells addObject:[NSObject new]];
-    }
-    
-    //force update
-    [self scrollViewDidScroll:userScroller];
-    
-
-    //RECIPE
-    for (NSObject * obj in recipeCells){
-        if ([obj isKindOfClass:[recipeCell class]]){
-            recipeCell * cell = (recipeCell *)obj;
-            [cell removeFromSuperview];
-        }
-    }
-    
-    recipeCells = [NSMutableArray new];
-    for (int n = 0; n < sortedRecipes.count; n++){
-        [recipeCells addObject:[NSObject new]];
-    }
-    
-    [self scrollViewDidScroll:recipeScroller];
-
-    
-    //NEW
-}
-
--(void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    
-    
-    //set vars
-    float topMargin = -h; //distance above y at which cells should disappear
-    float bottomMargin = h; //distance below y + h at which cells should disappear
-    float y = scrollView.contentOffset.y; //actual content offset
-    float tallyY = 10; //the running height of y offset for cells
-    float tallyX = 10;
-    float padding = 10;
-    CGSize cellSize;
-    
-    if ([scrollView isEqual:userScroller]){
-
-        cellSize = CGSizeMake(w, 80);
-
-           for (int n = 0; n < userCells.count; n++){
-               
-               bool isCell = false;
-               if ([userCells[n] isKindOfClass:[userCell class]]){ isCell = true; }
-               if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
-                   
-                   if (isCell){ //Removes the cells above if they exist
-                       [[userCells objectAtIndex:n] removeFromSuperview];
-                       [userCells replaceObjectAtIndex:n withObject:[NSObject new]];
-                   }
-                   
-               } else if (tallyY > y + scrollView.frame.size.height + bottomMargin){ //cells below not meeting threshold
-                   
-                   if (isCell){ //Removes the cells below if they exist
-                       [[userCells objectAtIndex:n] removeFromSuperview];
-                       [userCells replaceObjectAtIndex:n withObject:[NSObject new]];
-                   }
-                   
-               } else if (!isCell) {
-                           
-                       //create the cell, set frame and add to contentView
-                       userCell * cell = [[userCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width-2*tallyX, cellSize.height)];
-                       cell.layer.shouldRasterize = true;
-                       cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
-                       cell.opaque = true;
-                       cell.clipsToBounds = true;
-                       cell.transform = CGAffineTransformMakeTranslation(0, -y);
-                       [userContentView addSubview:cell];
-                       
-                       //data
-                       NSDictionary * d = sortedUsers[n];
-                       [cell updateForUser:d];
-                       [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
-                       
-                       //replace NSObject with cell
-                       [userCells replaceObjectAtIndex:n withObject:cell];
-               }
-               
-               tallyY += cellSize.height + padding;
-               
-               userCell * cell = userCells[n];
-               if ([cell isKindOfClass:[userCell class]]){
-                   int deviation = abs(userTouchIndex - n);
-                   float delay = deviation * 0.03;
-                   float duration = 1.0f - delay;
-                   [UIView animateWithDuration:duration
-                                         delay:delay
-                        usingSpringWithDamping:0.8
-                         initialSpringVelocity:0.7
-                                       options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
-                                    animations:^{
-                                        cell.transform = CGAffineTransformMakeTranslation(0, -y);
-                                    }
-                                    completion:^(BOOL finished){
-                                        
-                                    }];
-               }
-           }
-        
-        userContentView.transform = CGAffineTransformMakeTranslation(0, y);
-        userContentView.frame = CGRectMake(0, 0, w, tallyY);
-        userScroller.contentSize = CGSizeMake(w, tallyY);
-       // NSLog(@"User contentview is %@ and scroller is %@", userContentView, userScroller);
-
-    } else if ([scrollView isEqual:recipeScroller]){
-        
-        cellSize = CGSizeMake(w, 240);
-        recipeContentView.transform = CGAffineTransformMakeTranslation(0, y);
-        
-        for (int n = 0; n < recipeCells.count; n++){
-            
-            bool isCell = false;
-            if ([recipeCells[n] isKindOfClass:[recipeCell class]]){ isCell = true; }
-            if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
-                
-                if (isCell){ //Removes the cells above if they exist
-                    [[recipeCells objectAtIndex:n] removeFromSuperview];
-                    [recipeCells replaceObjectAtIndex:n withObject:[NSObject new]];
-                }
-                
-            } else if (tallyY > y + scrollView.frame.size.height + bottomMargin){ //cells below not meeting threshold
-                
-                if (isCell){ //Removes the cells below if they exist
-                    [[recipeCells objectAtIndex:n] removeFromSuperview];
-                    [recipeCells replaceObjectAtIndex:n withObject:[NSObject new]];
-                }
-                
-            } else if (!isCell) {
-                
-                //create the cell, set frame and add to contentView
-                recipeCell * cell = [[recipeCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width-2*tallyX, cellSize.height)];
-                cell.layer.shouldRasterize = true;
-                cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
-                cell.opaque = true;
-                cell.clipsToBounds = true;
-                cell.transform = CGAffineTransformMakeTranslation(0, -y);
-                [recipeContentView addSubview:cell];
-
-                //data
-                NSDictionary * d = sortedRecipes[n];
-                [cell updateForRecipe:d];
-                [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
-                
-                //replace NSObject with cell
-                [recipeCells replaceObjectAtIndex:n withObject:cell];
-            }
-            
-            //increment tally
-            tallyY += cellSize.height + padding;
-            
-            //bounce
-            recipeCell * cell = recipeCells[n];
-            if ([cell isKindOfClass:[recipeCell class]]){
-                int deviation = abs(recipeTouchIndex - n);
-                float delay = deviation * 0.03;
-                float duration = 1.0f - delay;
-                [UIView animateWithDuration:0.4
-                                      delay:0.3
-                     usingSpringWithDamping:0.8
-                      initialSpringVelocity:0.7
-                                    options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
-                                 animations:^{
-                                     cell.transform = CGAffineTransformMakeTranslation(0, -y);
-                                 }
-                                 completion:^(BOOL finished){
-                                     
-                                 }];
-            }
-        }
-        
-        
-        recipeContentView.frame = CGRectMake(0, 0, w, tallyY);
-        recipeScroller.contentSize = CGSizeMake(w, tallyY);
-        
-     //   NSLog(@"Recipe contentview is %@ and scroller is %@", recipeContentView, recipeScroller);
-        
-        /*
-        //parallax effect
-        float travelDistance = h + cellSize.height;
-        for (int n = 0; n < recipeCells.count; n++){
-            NSObject * obj = recipeCells[n];
-            if ([obj isKindOfClass:[recipeCell class]]){
-                recipeCell * cell = recipeCells[n];
-                float cellY = [recipeScroller convertPoint:cell.frame.origin toView:self.view].y+cellSize.height;
-                float p = cellY/travelDistance;
-                cell.recipeIV.transform = CGAffineTransformMakeTranslation(0, p*-30);
-            }
-        }
-        */
-    }
-
-    
-}
--(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
-    
-    if ([scrollView isEqual:userScroller]){
-        
-        //grab the location of the touch event
-        CGPoint location = [userScroller.panGestureRecognizer locationInView:userScroller];
-        int yTouch = location.y; //grab y coordinate
-        userTouchIndex = (yTouch - 10) / 90; //calculate the index of the cell
-        // NSLog(@"index: %i", userTouchIndex);
-        
-        
-    } else if ([scrollView isEqual:recipeScroller]){
-        
-        //grab the location of the touch event
-        CGPoint location = [recipeScroller.panGestureRecognizer locationInView:recipeScroller];
-        int yTouch = location.y; //grab y coordinate
-        recipeTouchIndex = (yTouch -10) / 250; //calculate the index of the cell
-       //  NSLog(@"index: %i", recipeTouchIndex);
-    }
-}
-
-
 -(void)search {
     
 }
 -(void)profile {
     
-    _chefVC = [chefVC new];
-    [self addChildViewController:_chefVC];
-    [self.view addSubview:_chefVC.view];
-    
 }
-
-
-
-//CHEF + RECIPE VC PUSH POP
--(void)cellClick:(UIButton *)button {
-    
-    NSLog(@"cell click");
-    
-    mainCell * cell = (mainCell *)button.superview;
-    int index = (int)[cells indexOfObject:cell];
-    
-    NSLog(@"index is %i", index);
-    selectedGroup = @"recipe";
-    
-    if ([selectedGroup isEqualToString:@"user"]){
-        [self pushChefVC:nil];
-    } else {
-        [self pushRecipeVC:nil];
-    }
-    
-    
-    
-}
--(void)pushChefVC:(NSNotification *)n{
-    
-    NSLog(@"PUSH CHEF VC");
-    
-    //create vc + set chef
-    _chefVC = [chefVC new];
-    [self addChildViewController:_chefVC];
-    [self.view addSubview:_chefVC.view];
-    
-    
-    //animate ui
-    _chefVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
-    [UIView animateWithDuration:0.3f
-                          delay:0.0f
-         usingSpringWithDamping:1.0f
-          initialSpringVelocity:0.8f
-                        options:UIViewAnimationOptionAllowUserInteraction
-                     animations:^{
-                         _chefVC.view.transform = CGAffineTransformIdentity;
-                     }
-                     completion:^(BOOL finished){
-                     }];
-    
-}
--(void)popChefVC {
-    
-    NSLog(@"POP CHEF VC");
-    [UIView animateWithDuration:0.3f
-                          delay:0.0f
-         usingSpringWithDamping:1.0f
-          initialSpringVelocity:0.8f
-                        options:UIViewAnimationOptionAllowUserInteraction
-                     animations:^{
-                         _chefVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
-                     }
-                     completion:^(BOOL finished){
-                         [_chefVC removeFromParentViewController];
-                         [_chefVC.view removeFromSuperview];
-                         _chefVC = nil;
-                     }];
-    
-}
--(void)pushRecipeVC:(NSNotification *)n{
-    
-    NSLog(@"PUSH RECIPE VC");
-    
-    //create vc + set recipe
-    _recipeVC = [recipeVC new];
-    [self addChildViewController:_recipeVC];
-    [self.view addSubview:_recipeVC.view];
-    
-    
-    //animate ui
-    _recipeVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
-    [UIView animateWithDuration:0.3f
-                          delay:0.0f
-         usingSpringWithDamping:1.0f
-          initialSpringVelocity:0.8f
-                        options:UIViewAnimationOptionAllowUserInteraction
-                     animations:^{
-                         _recipeVC.view.transform = CGAffineTransformIdentity;
-                     }
-                     completion:^(BOOL finished){
-                     }];
-}
--(void)popRecipeVC{
-    
-    NSLog(@"POP RECIPE VC");
-    [UIView animateWithDuration:0.3f
-                          delay:0.0f
-         usingSpringWithDamping:1.0f
-          initialSpringVelocity:0.8f
-                        options:UIViewAnimationOptionAllowUserInteraction
-                     animations:^{
-                         _recipeVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
-                     }
-                     completion:^(BOOL finished){
-                         [_recipeVC removeFromParentViewController];
-                         [_recipeVC.view removeFromSuperview];
-                         _recipeVC = nil;
-                     }];
-    
-    
-    
-}
-
 
 //CANTONS
 -(void)layoutCantonView {
@@ -846,9 +377,11 @@
     cantonLabel.textColor = [UIColor blackColor];
     [cantonBar addSubview:cantonLabel];
     
-    UIImageView * cantonArrow = [UIImageView new];
-    cantonArrow.frame = CGRectMake(0, w-40, 40, 40);
-    cantonArrow.image = [UIImage imageNamed:<#(nonnull NSString *)#>]
+    cantonArrow = [UIImageView new];
+    cantonArrow.frame = CGRectMake(w-35, 10, 20, 20);
+    cantonArrow.image = [[UIImage imageNamed:@"down-64.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    cantonArrow.tintColor = [UIColor blackColor];
+    [cantonBar addSubview:cantonArrow];
     
     UIButton * toggleCantonButton = [UIButton new];
     toggleCantonButton.frame = cantonLabel.bounds;
@@ -859,10 +392,10 @@
     cantonDiv.frame = CGRectMake(0, 39.5, w, 0.5f);
     cantonDiv.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.1f];
     [cantonBar addSubview:cantonDiv];
-
-}
+    
+} //layout the canton view itself
 -(void)toggleCantonSelection {
-
+    
     if (cantonsAreShowing){
         cantonsAreShowing = false;
         [UIView animateWithDuration:0.8f
@@ -873,8 +406,20 @@
                          animations:^{
                              topBar.transform = CGAffineTransformIdentity;
                              cantonView.transform = CGAffineTransformIdentity;
+                             cantonArrow.transform = CGAffineTransformIdentity;
                              cantonCover.alpha = 1.0f;
                              mainscrollerCover.alpha = 0.0f;
+
+                         }
+                         completion:^(BOOL finished){
+                         }];
+        [UIView animateWithDuration:0.8f
+                              delay:0.3f
+             usingSpringWithDamping:0.5f
+              initialSpringVelocity:1.0f
+                            options:UIViewAnimationOptionAllowUserInteraction
+                         animations:^{
+                             addButtonView.transform = CGAffineTransformIdentity;
                          }
                          completion:^(BOOL finished){
                          }];
@@ -890,24 +435,41 @@
                          animations:^{
                              topBar.transform = CGAffineTransformMakeTranslation(0, -60);
                              cantonView.transform = CGAffineTransformMakeTranslation(0, h-100);
+                             cantonArrow.transform = CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(180));
                              cantonCover.alpha = 0.0f;
                              mainscrollerCover.alpha = 1.0f;
                          }
                          completion:^(BOOL finished){
                          }];
+        
+        [UIView animateWithDuration:0.8f
+                              delay:0.1f
+             usingSpringWithDamping:0.8f
+              initialSpringVelocity:1.0f
+                            options:UIViewAnimationOptionAllowUserInteraction
+                         animations:^{
+                             
+                             addButtonView.transform = CGAffineTransformMakeTranslation(0, 100);
+                         }
+                         completion:^(BOOL finished){
+                         }];
+        
     }
-}
+} //user pulls down the canton options
 -(void)cantonSelected:(UIButton *)button {
     
-    _donkey.selectedCanton = _donkey.cantons[button.tag];
-    [_donkey saveCurrentUser];
-    [self updateForSelectedCanton];
-}
--(void)updateForSelectedCanton {
+    //set the new canton
+    [_donkey setPreferredCanton:_donkey.cantons[button.tag]];
+    
+    //update the data + ui
+    [self cantonDidChange];
+    
+} //user has selected a canton
+-(void)updateUIForSelectedCanton {
     
     //update canton scroller label colour
     int index = (int)[_donkey.cantons indexOfObject:_donkey.selectedCanton];
-
+    
     //deselect all but selected label
     for (int n = 0; n<cantonLabels.count; n++ ){
         
@@ -918,7 +480,7 @@
             label.textColor = [UIColor blackColor];
         }
     }
-
+    
     //update the canton label
     [UIView transitionWithView:cantonLabel
                       duration:0.5f
@@ -929,12 +491,427 @@
                     completion:^(BOOL finished){
                     }];
 
+    
     //toggle the closing
     if (cantonsAreShowing){
-       [self toggleCantonSelection];
+        [self toggleCantonSelection];
     }
+
+} //update the ui for the selected canton
+
+//ADDING
+-(void)layoutAddButton {
+    
+    addButtonView = [UIView new];
+    addButtonView.frame = CGRectMake(w-80, h-80, 60, 60);
+    addButtonView.backgroundColor = _peacock.appColour;
+    addButtonView.layer.cornerRadius = 30.0f;
+    [self.view addSubview:addButtonView];
+    
+    addButton = [UIButton new];
+    addButton.frame = addButtonView.bounds;
+    [addButton setImage:[[UIImage imageNamed:@"add-120.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] forState:UIControlStateNormal];
+    [addButton setTintColor:[UIColor whiteColor]];
+    [addButton setImageEdgeInsets:UIEdgeInsetsMake(15, 15, 15, 15)];
+    [addButton addTarget:self action:@selector(pushEditVC) forControlEvents:UIControlEventTouchUpInside];
+    [addButtonView addSubview:addButton];
     
 }
+
+//SCROLLING
+-(void)layoutScrollers {
+    
+    mainScroller = [UIScrollView new];
+    mainScroller.frame = CGRectMake(0, 0, w, h);
+    mainScroller.contentSize = CGSizeMake(3*w, h);
+    mainScroller.pagingEnabled = true;
+    mainScroller.showsVerticalScrollIndicator = false;
+    mainScroller.showsHorizontalScrollIndicator = false;
+    mainScroller.alwaysBounceHorizontal = true;
+    mainScroller.delegate = self;
+    [self.view addSubview:mainScroller];
+    
+    newScroller = [UIScrollView new];
+    newScroller.frame = CGRectMake(0, 100, w, h-100);
+    newScroller.showsVerticalScrollIndicator = false;
+    newScroller.showsHorizontalScrollIndicator = false;
+    newScroller.delegate = self;
+    newScroller.alwaysBounceVertical = true;
+    [mainScroller addSubview:newScroller];
+    
+    userScroller = [UIScrollView new];
+    userScroller.frame = CGRectMake(w, 100, w, h-100);
+    userScroller.showsVerticalScrollIndicator = false;
+    userScroller.showsHorizontalScrollIndicator = false;
+    userScroller.delegate = self;
+    userScroller.alwaysBounceVertical = true;
+    [mainScroller addSubview:userScroller];
+    
+    userContentView = [UIView new];
+    userContentView.frame = userScroller.bounds;
+    [userScroller addSubview:userContentView];
+    
+    recipeScroller = [UIScrollView new];
+    recipeScroller.frame = CGRectMake(w*2, 100, w, h-100);
+    recipeScroller.showsVerticalScrollIndicator = false;
+    recipeScroller.showsHorizontalScrollIndicator = false;
+    recipeScroller.delegate = self;
+    recipeScroller.alwaysBounceVertical = true;
+    [mainScroller addSubview:recipeScroller];
+    
+    recipeContentView = [UIView new];
+    recipeContentView.frame = recipeScroller.bounds;
+    [recipeScroller addSubview:recipeContentView];
+    
+    mainscrollerCover = [UIImageView new];
+    mainscrollerCover.frame = self.view.bounds;
+    mainscrollerCover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.5f];
+    [self.view addSubview:mainscrollerCover];
+    
+}
+-(void)refreshScroller {
+    
+    //USER
+    //empty out
+    for (NSObject * obj in userCells){
+        if ([obj isKindOfClass:[userCell class]]){
+            userCell * cell = (userCell *)obj;
+            [cell removeFromSuperview];
+        }
+    }
+    
+    //create new
+    userCells = [NSMutableArray new];
+    for (int n = 0; n < _donkey.cantonUsers.count; n++){
+        [userCells addObject:[NSObject new]];
+    }
+    
+    //force update
+    [self scrollViewDidScroll:userScroller];
+    
+    
+    //RECIPE
+    for (NSObject * obj in recipeCells){
+        if ([obj isKindOfClass:[recipeCell class]]){
+            recipeCell * cell = (recipeCell *)obj;
+            [cell removeFromSuperview];
+        }
+    }
+    recipeCells = [NSMutableArray new];
+    for (int n = 0; n < _donkey.cantonRecipes.count; n++){
+        [recipeCells addObject:[NSObject new]];
+    }
+    
+    [self scrollViewDidScroll:recipeScroller];
+    
+    
+    //NEW
+} //updates ui for the selected canton
+-(void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    
+    if ([scrollView isEqual:mainScroller]){
+        float xOff = mainScroller.contentOffset.x;
+        float fPage = xOff / w;
+        page = roundf(fPage);
+        return;
+    }
+    
+    //set vars
+    float topMargin = -h; //distance above y at which cells should disappear
+    float bottomMargin = h; //distance below y + h at which cells should disappear
+    float y = scrollView.contentOffset.y; //actual content offset
+    float tallyY = 10; //the running height of y offset for cells
+    float tallyX = 10;
+    float padding = 10;
+    CGSize cellSize;
+    
+    if ([scrollView isEqual:userScroller]){
+
+        cellSize = CGSizeMake(w, 80);
+
+           for (int n = 0; n < userCells.count; n++){
+               
+               bool isCell = false;
+               if ([userCells[n] isKindOfClass:[userCell class]]){ isCell = true; }
+               if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
+                   
+                   if (isCell){ //Removes the cells above if they exist
+                       [[userCells objectAtIndex:n] removeFromSuperview];
+                       [userCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                   }
+                   
+               } else if (tallyY > y + scrollView.frame.size.height + bottomMargin){ //cells below not meeting threshold
+                   
+                   if (isCell){ //Removes the cells below if they exist
+                       [[userCells objectAtIndex:n] removeFromSuperview];
+                       [userCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                   }
+                   
+               } else if (!isCell) {
+                           
+                       //create the cell, set frame and add to contentView
+                       userCell * cell = [[userCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width-2*tallyX, cellSize.height)];
+                       cell.layer.shouldRasterize = true;
+                       cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
+                       cell.opaque = true;
+                       cell.clipsToBounds = true;
+                       cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                       [userContentView addSubview:cell];
+                       
+                       //data
+                       NSDictionary * d = _donkey.cantonUsers[n];
+                   [cell updateForUser:d atRank:n+1];
+                       [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
+                       
+                       //replace NSObject with cell
+                       [userCells replaceObjectAtIndex:n withObject:cell];
+               }
+               
+               tallyY += cellSize.height + padding;
+               
+               userCell * cell = userCells[n];
+               if ([cell isKindOfClass:[userCell class]]){
+                   int deviation = abs(userTouchIndex - n);
+                   float delay = deviation * 0.03;
+                   float duration = 1.0f - delay;
+                   [UIView animateWithDuration:duration
+                                         delay:delay
+                        usingSpringWithDamping:0.8
+                         initialSpringVelocity:0.7
+                                       options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
+                                    animations:^{
+                                        cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                                    }
+                                    completion:^(BOOL finished){
+                                        
+                                    }];
+               }
+           }
+        
+        userContentView.transform = CGAffineTransformMakeTranslation(0, y);
+        userContentView.frame = CGRectMake(0, 0, w, tallyY);
+        userScroller.contentSize = CGSizeMake(w, tallyY);
+       // NSLog(@"User contentview is %@ and scroller is %@", userContentView, userScroller);
+
+    } else if ([scrollView isEqual:recipeScroller]){
+        
+        cellSize = CGSizeMake(w, 240);
+        recipeContentView.transform = CGAffineTransformMakeTranslation(0, y);
+        
+        for (int n = 0; n < recipeCells.count; n++){
+            
+            bool isCell = false;
+            if ([recipeCells[n] isKindOfClass:[recipeCell class]]){ isCell = true; }
+            if (tallyY + cellSize.height - topMargin < y){//cells above not meeting threshold
+                
+                if (isCell){ //Removes the cells above if they exist
+                    [[recipeCells objectAtIndex:n] removeFromSuperview];
+                    [recipeCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                }
+                
+            } else if (tallyY > y + scrollView.frame.size.height + bottomMargin){ //cells below not meeting threshold
+                
+                if (isCell){ //Removes the cells below if they exist
+                    [[recipeCells objectAtIndex:n] removeFromSuperview];
+                    [recipeCells replaceObjectAtIndex:n withObject:[NSObject new]];
+                }
+                
+            } else if (!isCell) {
+                
+                //create the cell, set frame and add to contentView
+                recipeCell * cell = [[recipeCell alloc] initWithFrame:CGRectMake(tallyX, tallyY, cellSize.width-2*tallyX, cellSize.height)];
+                cell.layer.shouldRasterize = true;
+                cell.layer.rasterizationScale = [[UIScreen mainScreen] scale];
+                cell.opaque = true;
+                cell.clipsToBounds = true;
+                cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                [recipeContentView addSubview:cell];
+
+                //data
+                NSDictionary * d = _donkey.cantonRecipes[n];
+                [cell updateForRecipe:d atRank:n+1];
+                [cell.button addTarget:self action:@selector(cellClick:) forControlEvents:UIControlEventTouchUpInside];
+                
+                //replace NSObject with cell
+                [recipeCells replaceObjectAtIndex:n withObject:cell];
+            }
+            
+            //increment tally
+            tallyY += cellSize.height + padding;
+            
+            //bounce
+            recipeCell * cell = recipeCells[n];
+            if ([cell isKindOfClass:[recipeCell class]]){
+                int deviation = abs(recipeTouchIndex - n);
+                float delay = deviation * 0.03;
+                float duration = 1.0f - delay;
+                [UIView animateWithDuration:0.4
+                                      delay:0.3
+                     usingSpringWithDamping:0.8
+                      initialSpringVelocity:0.7
+                                    options:UIViewAnimationOptionCurveEaseInOut| UIViewAnimationOptionAllowUserInteraction
+                                 animations:^{
+                                     cell.transform = CGAffineTransformMakeTranslation(0, -y);
+                                 }
+                                 completion:^(BOOL finished){
+                                     
+                                 }];
+            }
+        }
+        
+        
+        recipeContentView.frame = CGRectMake(0, 0, w, tallyY);
+        recipeScroller.contentSize = CGSizeMake(w, tallyY);
+        
+     //   NSLog(@"Recipe contentview is %@ and scroller is %@", recipeContentView, recipeScroller);
+        
+        /*
+        //parallax effect
+        float travelDistance = h + cellSize.height;
+        for (int n = 0; n < recipeCells.count; n++){
+            NSObject * obj = recipeCells[n];
+            if ([obj isKindOfClass:[recipeCell class]]){
+                recipeCell * cell = recipeCells[n];
+                float cellY = [recipeScroller convertPoint:cell.frame.origin toView:self.view].y+cellSize.height;
+                float p = cellY/travelDistance;
+                cell.recipeIV.transform = CGAffineTransformMakeTranslation(0, p*-30);
+            }
+        }
+        */
+    }
+
+    
+}
+-(void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+    
+    if ([scrollView isEqual:userScroller]){
+        
+        //grab the location of the touch event
+        CGPoint location = [userScroller.panGestureRecognizer locationInView:userScroller];
+        int yTouch = location.y; //grab y coordinate
+        userTouchIndex = (yTouch - 10) / 90; //calculate the index of the cell
+        // NSLog(@"index: %i", userTouchIndex);
+        
+        
+    } else if ([scrollView isEqual:recipeScroller]){
+        
+        //grab the location of the touch event
+        CGPoint location = [recipeScroller.panGestureRecognizer locationInView:recipeScroller];
+        int yTouch = location.y; //grab y coordinate
+        recipeTouchIndex = (yTouch -10) / 250; //calculate the index of the cell
+       //  NSLog(@"index: %i", recipeTouchIndex);
+    }
+}
+
+//CELLS ACTIONS
+-(void)cellClick:(UIButton *)button {
+
+    if (page == 1){
+        
+        NSObject * object = (NSObject *)button.superview;
+        int index = (int)[userCells indexOfObject:object];
+        NSDictionary * d = _donkey.cantonUsers[index];
+        NSString * userID = d[@"userID"];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"kPushChefVC" object:userID];
+        
+    } else if (page == 2){
+        
+        NSObject * object = (NSObject *)button.superview;
+        int index = (int)[recipeCells indexOfObject:object];
+        NSDictionary * d = _donkey.cantonRecipes[index];
+        NSString * recipeID = d[@"recipeID"];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"kPushRecipeVC" object:recipeID];
+        
+    }
+
+    
+}
+-(void)pushChefVC:(NSNotification *)n{
+    
+    NSLog(@"PUSH CHEF VC");
+    
+    //create vc + set chef
+    _chefVC = [chefVC new];
+    [self addChildViewController:_chefVC];
+    [self.view addSubview:_chefVC.view];
+    [_chefVC beginWithUserID:n.object];
+    
+    //animate ui
+    _chefVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _chefVC.view.transform = CGAffineTransformIdentity;
+                     }
+                     completion:^(BOOL finished){
+                     }];
+    
+}
+-(void)popChefVC {
+    
+    NSLog(@"POP CHEF VC");
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _chefVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+                     }
+                     completion:^(BOOL finished){
+                         [_chefVC removeFromParentViewController];
+                         [_chefVC.view removeFromSuperview];
+                         _chefVC = nil;
+                     }];
+    
+}
+-(void)pushRecipeVC:(NSNotification *)n{
+
+    //create vc + set recipe
+    _recipeVC = [recipeVC new];
+    [self addChildViewController:_recipeVC];
+    [self.view addSubview:_recipeVC.view];
+    [_recipeVC beginWithRecipeID:n.object];
+    
+    //animate ui
+    _recipeVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _recipeVC.view.transform = CGAffineTransformIdentity;
+                     }
+                     completion:^(BOOL finished){
+                     }];
+}
+-(void)popRecipeVC{
+    
+    NSLog(@"POP RECIPE VC");
+    [UIView animateWithDuration:0.3f
+                          delay:0.0f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         _recipeVC.view.transform = CGAffineTransformMakeTranslation(w, 0);
+                     }
+                     completion:^(BOOL finished){
+                         [_recipeVC removeFromParentViewController];
+                         [_recipeVC.view removeFromSuperview];
+                         _recipeVC = nil;
+                     }];
+    
+    
+    
+}
+
+
+
 
 //EDIT (NEW RECIPE)
 -(void)pushEditVC {

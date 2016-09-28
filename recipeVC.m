@@ -8,10 +8,13 @@
 
 #import "recipeVC.h"
 #import "Peacock.h"
+#import "Donkey.h"
 
 @interface recipeVC () {
     
     Peacock * _peacock;
+    Donkey * _donkey;
+    
     float w;
     float h;
     
@@ -19,24 +22,47 @@
     UIView * contentView;
     UIImageView * mediaIV;
     UIImageView * chefIV;
+    
+
+    
+    //data
+    
+    NSDictionary * recipe;
+    NSDictionary * chef;
+    
+    UIButton * ingredientsButton;
+    UIButton * instructionsButton;
+    UITextView * prepTV;
 }
 
 @end
 
 @implementation recipeVC
 
-- (void)viewDidLoad {
+-(void)viewDidLoad {
     [super viewDidLoad];
     [self setup];
-    [self layout];
-    [self begin];
 }
 -(void)setup{
     
     _peacock = [Peacock sharedInstance];
+    _donkey = [Donkey sharedInstance];
     
     w = self.view.frame.size.width;
     h = self.view.frame.size.height;
+}
+-(void)beginWithRecipeID:(NSString *)recipeID {
+
+    recipe = _donkey.recipes[recipeID];
+    NSLog(@"d is %@", recipe);
+    
+    NSString * userID = recipe[@"userID"];
+    chef = _donkey.users[userID];
+   NSLog(@"chef is %@", chef);
+         
+    
+    [self layout]; //general layout
+    
 }
 -(void)layout{
     
@@ -60,35 +86,6 @@
     [backButton setTintColor:[UIColor whiteColor]];
     [backButton addTarget:self action:@selector(popSelf) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:backButton];
-    
-    float yOff = 0.0f;
-    yOff += [self layoutTopView];
-    
-    [self layoutMediaViewAtOffset:yOff];
-    yOff += 280;
-    
-    [self layoutPrepViewAtOffset:yOff];
-    yOff += 400;
-    
-    [self layoutVideoViewAtOffset:yOff];
-    yOff += 160.0f + 5;
-    
-    [self layoutChefViewAtOffset:yOff];
-    yOff += 80.0f + 5;
-    
-    [self layoutRatingViewAtOffset:yOff];
-    yOff += 120.0f + 10;
-    
-    contentView.frame = CGRectMake(0, 0, w, yOff+20);
-    mainScroller.contentSize = CGSizeMake(w, yOff+20);
-}
--(void)begin{
-    
-}
-
-//TOP
-
--(float)layoutTopView {
     
     UIView * topView = [UIView new];
     topView.backgroundColor = [UIColor blackColor];
@@ -124,24 +121,17 @@
     UILabel * timeLabel = [UILabel new];
     timeLabel.frame = timeView.bounds;
     timeLabel.textAlignment = NSTextAlignmentCenter;
-    timeLabel.text = @"105min";
     timeLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
     timeLabel.textColor = [UIColor whiteColor];
+    timeLabel.text = [NSString stringWithFormat:@"%imin", [recipe[@"duration"]intValue]];
     [timeView addSubview:timeLabel];
     
-    //LAYOUT UPSIDE DOWN (text height is dynamic)
+    //LAYOUT UPSIDE DOWN
     float yOff = 400;
     float xOff = 20;
     
-    //div marks mid point
-    UIImageView * div = [UIImageView new];
-    div.frame = CGRectMake(xOff, yOff, w-2*xOff, 0.5f);
-    div.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3f];
-    [topView addSubview:div];
-    
     //TITLE
-    NSString * name = @"Pan-Seared Carrot in Duck Sauce";
-    NSArray * splitsies = [self splitStringsForTitle:name];
+    NSArray * splitsies = [self splitStringsForTitle:recipe[@"recipeName"]];
     NSString * firstString = splitsies[0];
     NSString * secondString = splitsies[1];
     
@@ -174,7 +164,6 @@
         nameLabel.frame = CGRectMake(xOff, yOff, w-2*xOff, nameLabel.frame.size.height);
     }
     
-    
     //STAR VIEW
     yOff -= 30;
     UIView * starView = [self starViewWithScore:5.0f ofColour:_peacock.appColour forHeight:30 atPoint:CGPointMake(xOff, yOff)];
@@ -182,14 +171,14 @@
     
     
     //END REVERSE LAYOUT
-    yOff = 410;
+    yOff = 400;
     
-    //COURSE + DIFFICULTY LABEL
+    //COURSE
     UILabel * courseLabel = [UILabel new];
     courseLabel.frame = CGRectMake(xOff, yOff, 0, 20);
-    courseLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    courseLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
     courseLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.8f];
-    courseLabel.text = @"Hauptgericht";
+    courseLabel.text = recipe[@"course"];
     [courseLabel sizeToFit];
     [topView addSubview:courseLabel];
     
@@ -197,41 +186,30 @@
     [topView addSubview:[self breakerDotAtPoint:CGPointMake(xOff, yOff+5)]];
     xOff += 15;
     
+    
+    //DIFFICULTY
     UILabel * difficultyLabel = [UILabel new];
     difficultyLabel.frame = CGRectMake(xOff, yOff, 0, 20);
-    difficultyLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    difficultyLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
     difficultyLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.8f];
-    difficultyLabel.text = @"Schwierig";
+    difficultyLabel.text = recipe[@"difficulty"];
     [difficultyLabel sizeToFit];
     [topView addSubview:difficultyLabel];
     
     xOff = 20;
     yOff += 28;
     
-    UIImageView * divB = [UIImageView new];
-    divB.frame = CGRectMake(xOff, yOff, w-2*xOff, 0.5f);
-    divB.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3f];
-    [topView addSubview:divB];
     
-    yOff += 10;
+    //DIV
+    UIImageView * div = [UIImageView new];
+    div.frame = CGRectMake(xOff, yOff, w-2*xOff, 0.5f);
+    div.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3f];
+    [topView addSubview:div];
     
-    //DESCRIPTION
-    UITextView * description = [UITextView new];
-    description.frame = CGRectMake(xOff, yOff, w-2*xOff, 0);
-    description.backgroundColor = [UIColor clearColor];
-    description.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
-    description.textColor = [UIColor whiteColor];
-    description.textContainer.lineFragmentPadding = 0;
-    description.textContainerInset = UIEdgeInsetsZero;
-    description.userInteractionEnabled = false;
-    description.textAlignment = NSTextAlignmentJustified;
-    description.text = @"It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English.";
-    [description sizeToFit];
-    [topView addSubview:description];
+    yOff += 15;
     
-    yOff += description.frame.size.height+10;
     
-    //LAYOUT BUTTONS BELOW
+    //FAVOURITE
     UIView * favouriteView = [UIView new];
     favouriteView.backgroundColor = _peacock.appColour;
     [topView addSubview:favouriteView];
@@ -262,8 +240,6 @@
     [favouriteView addSubview:favouriteButton];
     
     
-    xOff += favouriteView.frame.size.width + 10;
-    
     //SHARE
     UIView * shareView = [UIView new];
     [topView addSubview:shareView];
@@ -293,13 +269,218 @@
     [shareButton addTarget:self action:@selector(share) forControlEvents:UIControlEventTouchUpInside];
     [shareView addSubview:shareButton];
     
+    xOff = 20;
+    yOff += 55;
+    
+    
+    //DESCRIPTION
+    UILabel * description = [UILabel new];
+    description.frame = CGRectMake(xOff, yOff, w-2*xOff, 0);
+    description.backgroundColor = [UIColor clearColor];
+    description.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    description.textColor = [UIColor whiteColor];
+    description.text = recipe[@"introduction"];
+    description.text = @"There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet.";
+    description.numberOfLines = 0;
+    [description sizeToFit];
+    [topView addSubview:description];
+    
+    yOff += description.frame.size.height+10;
+    
+    
+    
+    //INGREDIENTS
+    UILabel * ingredientsLabel = [UILabel new];
+    ingredientsLabel.frame = CGRectMake(20, yOff, w-40, 40);
+    ingredientsLabel.textColor = [UIColor whiteColor];
+    ingredientsLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    ingredientsLabel.text = @"Zutaten";
+    [topView addSubview:ingredientsLabel];
+    
+    yOff += 40;
+    
+    UILabel * ingredientsText = [UILabel new];
+    ingredientsText.frame = CGRectMake(20, yOff, w-40, 0);
+    ingredientsText.textColor = [UIColor whiteColor];
+    ingredientsText.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular];
+    ingredientsText.text = recipe[@"ingredients"];
+    
+    ingredientsText.text = @"2 Eier\n150gr Butter\n200ml Wasser\n200gr Safron\n3 Chillies\n2 Esslöffel Rapsöl\n15gr Salz";
+    
+    ingredientsText.numberOfLines = 0;
+    [ingredientsText sizeToFit];
+    [topView addSubview:ingredientsText];
+    
+    yOff += ingredientsText.frame.size.height;
+    yOff += 20;
+    
+    
+    //INSTRUCTIONS
+    UILabel * instructionsLabel = [UILabel new];
+    instructionsLabel.frame = CGRectMake(20, yOff, w-40, 40);
+    instructionsLabel.textColor = [UIColor whiteColor];
+    instructionsLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    instructionsLabel.text = @"Zubereitung";
+    [topView addSubview:instructionsLabel];
+    
+    yOff += 40;
+    
+    UILabel * instructionsText = [UILabel new];
+    instructionsText.frame = CGRectMake(20, yOff, w-40, 0);
+    instructionsText.textColor = [UIColor whiteColor];
+    instructionsText.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular];
+    instructionsText.text = recipe[@"instructions"];
+    instructionsText.numberOfLines = 0;
+    [instructionsText sizeToFit];
+    [topView addSubview:instructionsText];
+    
+    yOff += instructionsText.frame.size.height;
+    yOff += 20;
+    
+    
+    //COOK
+    UIButton * cookButton = [UIButton new];
+    cookButton.frame = CGRectMake(20, yOff, w-40, 60);
+    cookButton.layer.borderColor = _peacock.appColour.CGColor;
+    cookButton.layer.borderWidth = 1.0f;
+    [topView addSubview:cookButton];
+    
     yOff += 60;
+    yOff += 20;
     
-    //LAYOUT DESCRIPTION
+    
+    //IMAGES
+    
+    
+    //VIDEO
+    
+    //CHEF
+    UIView * chefView = [UIView new];
+    chefView.frame = CGRectMake(0, yOff, w, 80);
+    chefView.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3f];
+    chefView.clipsToBounds = true;
+    [mainScroller addSubview:chefView];
+    
+    chefIV = [UIImageView new];
+    chefIV.frame =  CGRectMake(0, 0, w, 100);
+    chefIV.contentMode = UIViewContentModeScaleAspectFill;
+    [chefView addSubview:chefIV];
+    
+    UIImageView * chefCover = [UIImageView new];
+    chefCover.frame = chefView.bounds;
+    chefCover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.7f];
+    [chefView addSubview:chefCover];
+    
+    UIView * profileCircle = [UIView new];
+    profileCircle.frame = CGRectMake(10, 10, 60, 60);
+    profileCircle.layer.cornerRadius = 30.0f;
+    profileCircle.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3f];
+    [chefView addSubview:profileCircle];
+    
+    UILabel * profileLabel = [UILabel new];
+    profileLabel.frame = profileCircle.bounds;
+    profileLabel.font = [UIFont systemFontOfSize:20.0f weight:UIFontWeightBold];
+    profileLabel.textColor = [UIColor whiteColor];
+    profileLabel.textAlignment = NSTextAlignmentCenter;
+    profileLabel.text = [_peacock initialsForName:recipe[@"userName"]];
+    [profileCircle addSubview:profileLabel];
+    
+    UIImageView * profileIV = [UIImageView new];
+    profileIV.frame = CGRectMake(10, 10, 60, 60);
+    profileIV.layer.cornerRadius = 30.0f;
+    profileIV.contentMode = UIViewContentModeScaleAspectFill;
+    profileIV.clipsToBounds = true;
+    [profileCircle addSubview:profileIV];
+    
+    UILabel * nameLabel = [UILabel new];
+    nameLabel.frame = CGRectMake(80, 28, w-120, 20);
+    nameLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    nameLabel.textColor = [UIColor whiteColor];
+    nameLabel.text = recipe[@"userName"];
+    [chefView addSubview:nameLabel];
+    
+    NSArray * recipes = chef[@"recipes"];
+    NSString * recipeText = [NSString stringWithFormat:@"%i Gerichte", (int)recipes.count];
+    if (recipes.count == 1){ recipeText = @"1 Gericht"; }
+    
+    UILabel * recipeCountLabel = [UILabel new];
+    recipeCountLabel.frame = CGRectMake(80, 50, w-120, 20);
+    recipeCountLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    recipeCountLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.8f];
+    recipeCountLabel.text = recipeText;
+    [chefView addSubview:recipeCountLabel];
+    
+    float chefScore = [chef[@"score"] floatValue];
+    int chefVotes = [chef[@"votes"] intValue];
+    if (chefVotes > 3){
+        UIView * chefStar = [_peacock starViewWithScore:chefScore ofColour:_peacock.appColour votes:chefVotes ofColour:[UIColor whiteColor] forHeight:15.0f atPoint:CGPointMake(80, 10)];
+        [chefView addSubview:chefStar];
+    } else {
+        nameLabel.frame = CGRectMake(80, 10, w-120, 30);
+        recipeCountLabel.frame = CGRectMake(80, 35, w-120, 30);
+    }
+    
+    UIImageView * arrowIV = [UIImageView new];
+    arrowIV.frame = CGRectMake(w-30, 0, 20, 80);
+    arrowIV.contentMode = UIViewContentModeScaleAspectFit;
+    arrowIV.image = [[UIImage imageNamed:@"next_right_thin-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    arrowIV.tintColor = [UIColor whiteColor];
+    [chefView addSubview:arrowIV];
+    
+    UIButton * chefButton = [UIButton new];
+    chefButton.frame = chefView.bounds;
+    [chefButton addTarget:self action:@selector(showChef) forControlEvents:UIControlEventTouchUpInside];
+    [chefView addSubview:chefButton];
+    
+    yOff += 100;
+
+    
+    //RATING
+    NSDictionary * ranks = [_donkey rankingForRecipe:recipe[@"recipeID"]];
+    NSLog(@"ranks is %@", ranks);
+    
+    UIView * ratingView = [UIView new];
+    ratingView.frame = CGRectMake(0, yOff, w, 120);
+    [mainScroller addSubview:ratingView];
+    
+    UILabel * label = [UILabel new];
+    label.frame = CGRectMake(20, 0, w-40, 20);
+    label.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    label.textColor = [UIColor whiteColor];
+    label.text = @"Deine Bewertung";
+    [ratingView addSubview:label];
+    
+    float localX = 20;
+    for (int n = 0; n < 5; n++){
+        
+        UIImageView * starIV = [UIImageView new];
+        starIV.frame = CGRectMake(localX, 25, 40, 40);
+        starIV.contentMode = UIViewContentModeScaleAspectFit;
+        starIV.image = [[UIImage imageNamed:@"star_thin_empty-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        starIV.tintColor = [UIColor whiteColor];
+        [ratingView addSubview:starIV];
+        localX += 40+5;
+        
+    }
+    
+    UILabel * helperLabel = [UILabel new];
+    helperLabel.frame = CGRectMake(20, 70, w-40, 20);
+    helperLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    helperLabel.textColor = [UIColor whiteColor];
+    helperLabel.text = @"Noch Keine Bewertung";
+    [ratingView addSubview:helperLabel];
+    
+    yOff += 120;
+    
+    
+    
     topView.frame = CGRectMake(0, 0, w, yOff);
-    
-    return yOff;
+
+    contentView.frame = CGRectMake(0, 0, w, yOff+20);
+    mainScroller.contentSize = CGSizeMake(w, yOff+20);
 }
+
+//TOPVIEW
 -(void)favourite {
     
 }
@@ -344,50 +525,6 @@
     [mediaView addSubview:moreMediaButton];
     
 }
-
-//PREP
--(void)layoutPrepViewAtOffset:(float)yOff {
-    
-    
-    UIView * prepView = [UIView new];
-    prepView.frame = CGRectMake(0, yOff, w, 400);
-    prepView.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.2f];
-    [mainScroller addSubview:prepView];
-    
-    UIView * menuBar = [UIView new];
-    menuBar.frame = CGRectMake(0, 0, w, 50);
-    menuBar.backgroundColor = [UIColor blackColor];
-    [prepView addSubview:menuBar];
-    
-    UIImageView * div = [UIImageView new];
-    div.frame = CGRectMake(20, 0, w-40, 0.5f);
-    div.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3f];
-    [menuBar addSubview:div];
-    
-    UIButton * ingredientsButton = [UIButton new];
-    ingredientsButton.frame = CGRectMake(0, 0, w/2, 50);
-    [ingredientsButton setTitle:@"Zutaten" forState:UIControlStateNormal];
-    [ingredientsButton setTitleColor:_peacock.appColour forState:UIControlStateNormal];
-    [ingredientsButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular]];
-    [ingredientsButton addTarget:self action:@selector(showIngredients) forControlEvents:UIControlEventTouchUpInside];
-    [menuBar addSubview:ingredientsButton];
-    
-    UIButton * instructionsButton = [UIButton new];
-    instructionsButton.frame = CGRectMake(w/2, 0, w/2, 50);
-    [instructionsButton setTitle:@"Zubereitung" forState:UIControlStateNormal];
-    [instructionsButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [instructionsButton.titleLabel setFont:[UIFont systemFontOfSize:15.0f weight:UIFontWeightThin]];
-    [instructionsButton addTarget:self action:@selector(showIngredients) forControlEvents:UIControlEventTouchUpInside];
-    [menuBar addSubview:instructionsButton];
-    
-}
--(void)showIngredients {
-    
-}
--(void)showInstructions {
-    
-}
-
 //VIDEO
 -(void)layoutVideoViewAtOffset:(float)yOff {
     
@@ -437,60 +574,7 @@
 //CHEF
 -(void)layoutChefViewAtOffset:(float)yOff {
     
-    UIView * chefView = [UIView new];
-    chefView.frame = CGRectMake(0, yOff, w, 80);
-    chefView.backgroundColor = [UIColor blackColor];
-    chefView.clipsToBounds = true;
-    [mainScroller addSubview:chefView];
-    
-    chefIV = [UIImageView new];
-    chefIV.frame =  CGRectMake(0, 0, w, 100);
-    chefIV.image = [UIImage imageNamed:@"cookd.png"];
-    chefIV.contentMode = UIViewContentModeScaleAspectFill;
-    [chefView addSubview:chefIV];
-    
-    UIImageView * cover = [UIImageView new];
-    cover.frame = chefView.bounds;
-    cover.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.7f];
-    [chefView addSubview:cover];
-    
-    UIImageView * profileIV = [UIImageView new];
-    profileIV.frame = CGRectMake(10, 10, 60, 60);
-    profileIV.layer.cornerRadius = 30.0f;
-    profileIV.contentMode = UIViewContentModeScaleAspectFill;
-    profileIV.clipsToBounds = true;
-    [chefView addSubview:profileIV];
-    
-    profileIV.image = [UIImage imageNamed:@"cookd.png"];
-    
-    UIView * starView = [self starViewWithScore:3.50f ofColour:_peacock.appColour forHeight:15 atPoint:CGPointMake(80, 10)];
-    [chefView addSubview:starView];
-    
-    UILabel * nameLabel = [UILabel new];
-    nameLabel.frame = CGRectMake(80, 28, w-120, 20);
-    nameLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
-    nameLabel.textColor = [UIColor whiteColor];
-    nameLabel.text = @"Karin Sutterberg";
-    [chefView addSubview:nameLabel];
-    
-    UILabel * recipeCountLabel = [UILabel new];
-    recipeCountLabel.frame = CGRectMake(80, 50, w-120, 20);
-    recipeCountLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
-    recipeCountLabel.textColor = [[UIColor whiteColor] colorWithAlphaComponent:0.8f];
-    recipeCountLabel.text = @"22 Gerichte";
-    [chefView addSubview:recipeCountLabel];
-    
-    UIImageView * arrowIV = [UIImageView new];
-    arrowIV.frame = CGRectMake(w-30, 0, 20, 80);
-    arrowIV.contentMode = UIViewContentModeScaleAspectFit;
-    arrowIV.image = [[UIImage imageNamed:@"next_right_thin-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-    arrowIV.tintColor = [UIColor whiteColor];
-    [chefView addSubview:arrowIV];
-    
-    UIButton * chefButton = [UIButton new];
-    chefButton.frame = chefView.bounds;
-    [chefButton addTarget:self action:@selector(showChef) forControlEvents:UIControlEventTouchUpInside];
-    [chefView addSubview:chefButton];
+
     
 }
 -(void)showChef {
@@ -501,37 +585,7 @@
 
 //RATING
 -(void)layoutRatingViewAtOffset:(float)yOff {
-    
-    UIView * ratingView = [UIView new];
-    ratingView.frame = CGRectMake(0, yOff, w, 120);
-    [mainScroller addSubview:ratingView];
-    
-    UILabel * label = [UILabel new];
-    label.frame = CGRectMake(20, 0, w-40, 20);
-    label.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
-    label.textColor = [UIColor whiteColor];
-    label.text = @"Deine Bewertung";
-    [ratingView addSubview:label];
-    
-    float localX = 20;
-    for (int n = 0; n < 5; n++){
-        
-        UIImageView * starIV = [UIImageView new];
-        starIV.frame = CGRectMake(localX, 25, 40, 40);
-        starIV.contentMode = UIViewContentModeScaleAspectFit;
-        starIV.image = [[UIImage imageNamed:@"star_thin_empty-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
-        starIV.tintColor = [UIColor whiteColor];
-        [ratingView addSubview:starIV];
-        localX += 40+5;
-        
-    }
-    
-    UILabel * helperLabel = [UILabel new];
-    helperLabel.frame = CGRectMake(20, 70, w-40, 20);
-    helperLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
-    helperLabel.textColor = [UIColor whiteColor];
-    helperLabel.text = @"Noch Keine Bewertung";
-    [ratingView addSubview:helperLabel];
+
 }
 
 //SCROLLING

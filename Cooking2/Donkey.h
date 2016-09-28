@@ -20,21 +20,25 @@
 @property NSArray * skillLevels;
 @property NSArray * courses;
 
-@property NSMutableDictionary * users;
-@property NSMutableDictionary * recipes;
+
 
 +(id)sharedInstance;
 -(void)saveCurrentUser;
 -(void)loadCurrentUser;
-
 -(void)parseMeta:(NSDictionary *)meta;
-
--(void)sortUserByScore;
--(NSArray *)sortUsersByScoreForCanton:(NSString *)canton inRange:(int)days;
--(NSArray *)sortRecipesByScoreForCanton:(NSString *)canton inRange:(int)days;
 
 
 //
--(NSArray *)sortUsersForCanton:(NSString *)canton;
--(NSArray *)sortRecipesForCanton:(NSString *)canton;
+@property NSMutableDictionary * users;
+@property NSMutableDictionary * recipes;
+-(NSDictionary *)userForID:(NSString *)userID;
+-(NSDictionary *)recipeForID:(NSString *)recipeID;
+
+-(void)setPreferredCanton:(NSString *)canton;
+-(void)sortDataForPreferredCanton;
+@property NSArray * cantonUsers;
+@property NSArray * cantonRecipes;
+
+-(NSDictionary *)rankingForRecipe:(NSString *)recipeID;
+
 @end
