@@ -11,13 +11,17 @@
 
 @interface Dog : NSObject <NSURLSessionDelegate>
 +(id)sharedInstance;
+
 -(void)fetchMetaData;
--(void)fetchFile:(NSString *)filename fromFolder:(NSString *)folder callback:(NSString *)callback;
+-(NSString *)fetchFileFromPath:(NSString *)path withCallback:(NSString *)callback;
+
+
 
 -(void)checkUsernameIsAvailable:(NSString *)username;
 -(void)updateUser:(NSDictionary *)dictionary;
 -(void)updateRecipe:(NSDictionary *)dictionary;
 
+-(void)voteOnRecipe:(NSString *)recipeID forVoterID:(NSString *)voterID forOwnerID:(NSString *)ownerID withVote:(int)vote;
 
 
 

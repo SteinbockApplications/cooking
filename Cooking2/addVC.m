@@ -1,12 +1,12 @@
 //
-//  editVC.m
+//  addVC.m
 //  Cooking2
 //
 //  Created by Duncan Geoghegan on 29/08/16.
 //  Copyright © 2016 Steinbock Applications. All rights reserved.
 //
 
-#import "editVC.h"
+#import "addVC.h"
 #import "Peacock.h"
 #import "Donkey.h"
 #import "Recipe.h"
@@ -15,7 +15,7 @@
 
 #define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
 
-@interface editVC () {
+@interface addVC () {
     
     Peacock * _peacock;
     Donkey * _donkey;
@@ -67,7 +67,7 @@
 
 @end
 
-@implementation editVC
+@implementation addVC
 
 //SETUP
 -(void)viewDidLoad {
@@ -1119,7 +1119,7 @@
 //OTHER
 -(void)popSelf {
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"kPopEditVC" object:nil];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"kPopAddVC" object:nil];
 }
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];

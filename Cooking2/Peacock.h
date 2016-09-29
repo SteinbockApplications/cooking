@@ -38,4 +38,7 @@
 -(NSString *)initialsForName:(NSString *)name;
 
 -(UIImageView *)breakerDotOfColour:(UIColor *)colour atPoint:(CGPoint)point;
+
+-(void)updateStatusBarIsDark:(bool)isDark isHidden:(bool)isHidden;
+-(NSString *)dateForTimestamp:(NSString *)ts;
 @end

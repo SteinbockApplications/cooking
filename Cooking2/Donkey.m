@@ -23,11 +23,15 @@ static Donkey *sharedInstance = nil;
 
 @synthesize users;
 @synthesize recipes;
+@synthesize recents;
 
 
 @synthesize selectedCanton;
 @synthesize cantonUsers;
 @synthesize cantonRecipes;
+@synthesize cantonRecents;
+
+@synthesize media;
 
 + (Donkey *)sharedInstance {
     
@@ -110,6 +114,8 @@ static Donkey *sharedInstance = nil;
 }
 -(void)parseMeta:(NSDictionary *)meta {
 
+    //NSLog(@"META: %@", meta);
+    
     /*
      userID = {
      createTS =
@@ -150,8 +156,10 @@ static Donkey *sharedInstance = nil;
     
     //add the content for the user key
     for (NSDictionary * user in userArray){
-        NSString * userID = user[@"userID"];
-        users[userID]=user;
+        
+        NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:user];
+        mUser[@"type"]=@"user";
+        users[user[@"userID"]]=mUser;
     }
     
 
@@ -188,33 +196,35 @@ static Donkey *sharedInstance = nil;
         NSMutableDictionary * mRecipe = [[NSMutableDictionary alloc] initWithDictionary:recipe];
         //add and set
         mRecipe[@"location"]= location;
-        mRecipe[@"userName"]=userName;
+        mRecipe[@"userName"]= userName;
+        mRecipe[@"type"]= @"recipe";
         recipes[recipeID] = mRecipe;
     }
     
     //SCORING
     //pull the score data
-    NSMutableArray * scoreArray = [[NSMutableArray alloc] initWithArray:meta[@"scores"]];
+    NSMutableArray * voteArray = [[NSMutableArray alloc] initWithArray:meta[@"votes"]];
     float scoreTally = 0.0f;
+    //NSLog(@"score array is %@", voteArray);
     
     //loop through adding in the scores
-    for (NSDictionary * score in scoreArray){
+    for (NSDictionary * score in voteArray){
         
         NSString * recipeID = score[@"recipeID"];
-        NSString * userID = score[@"userID"];
-        NSString * reviewerID = score[@"reviewerID"];
-        NSString * review = score[@"score"];
+        NSString * ownerID = score[@"ownerID"];
+        NSString * voterID = score[@"voterID"];
+        NSString * vote = score[@"vote"];
         
         //set the score for the reviewer ID
         //as this is displayed when the user
         //visits this recipe
         //--> setting the score this user has set for the other recipe id
-        if (users[reviewerID]){
-            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[reviewerID]];
-            NSMutableDictionary * existingScores = [NSMutableDictionary new];
-            existingScores[recipeID]=review;
+        if (users[voterID]){
+            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[voterID]];
+            NSMutableDictionary * existingScores = [[NSMutableDictionary alloc] initWithDictionary:mUser[@"reviews"]];
+            existingScores[recipeID]=vote;
             mUser[@"reviews"]=existingScores;
-            users[reviewerID]=mUser;
+            users[voterID]=mUser;
         }
         
         //set the score for the recipe ID
@@ -225,7 +235,7 @@ static Donkey *sharedInstance = nil;
             NSMutableDictionary * mRecipe = [[NSMutableDictionary alloc] initWithDictionary:recipes[recipeID]];
             NSMutableArray * existingScores = [NSMutableArray new];
             [existingScores addObjectsFromArray:mRecipe[@"scores"]];
-            [existingScores addObject:review];
+            [existingScores addObject:vote];
             mRecipe[@"scores"]=existingScores;
             recipes[recipeID]=mRecipe;
         }
@@ -233,22 +243,22 @@ static Donkey *sharedInstance = nil;
         //set the score for the user ID
         //this is calculated at the end
         //--> set the score for the user herself
-        if (users[userID]){
-            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[userID]];
+        if (users[ownerID]){
+            NSMutableDictionary * mUser = [[NSMutableDictionary alloc] initWithDictionary:users[ownerID]];
             NSMutableArray * existingScores = [NSMutableArray new];
             [existingScores addObjectsFromArray:mUser[@"scores"]];
-            [existingScores addObject:review];
+            [existingScores addObject:vote];
             mUser[@"scores"]=existingScores;
-            users[userID]=mUser;
+            users[ownerID]=mUser;
         }
         
         //used to calculate total mean
-        scoreTally += review.floatValue;
+        scoreTally += vote.floatValue;
     }
     
     //WEIGHTED SCORING (number of votes, mean vote)
     //need to calculate mean scores for all
-    float overalMeanScore = scoreTally / scoreArray.count;
+    float overalMeanScore = scoreTally / voteArray.count;
     float minimumVotesRequired = 3.0f;
 
     //calculate averages
@@ -266,7 +276,8 @@ static Donkey *sharedInstance = nil;
             
             //Bayesian estimate
             float weightedAverage = (votes / (votes + minimumVotesRequired)) * mean + (minimumVotesRequired / (votes + minimumVotesRequired)) * overalMeanScore;
-        
+            if (votes < minimumVotesRequired){  weightedAverage = 0; }
+            
             //save in for the user
             user[@"scores"]=nil;
             user[@"votes"]=[NSString stringWithFormat:@"%i",votes];
@@ -291,7 +302,8 @@ static Donkey *sharedInstance = nil;
             
             //Bayesian estimate
             float weightedAverage = (votes / (votes + minimumVotesRequired)) * mean + (minimumVotesRequired / (votes + minimumVotesRequired)) * overalMeanScore;
-        
+            if (votes < minimumVotesRequired){  weightedAverage = 0; }
+            
             //save in for the recipe
             recipe[@"score"]=[NSString stringWithFormat:@"%f",mean];
             recipe[@"votes"]=[NSString stringWithFormat:@"%i",votes];
@@ -300,12 +312,33 @@ static Donkey *sharedInstance = nil;
         }
     }
     
+    //MEDIA --> pulled when needed
+    media = meta[@"files"];
+
+    
+    //RECENT
+    NSMutableArray * temp = [NSMutableArray new];
+    for (NSString * key in users.allKeys){
+        [temp addObject:users[key]];
+    }
+    for (NSString * key in recipes.allKeys){
+        [temp addObject:recipes[key]];
+    }
+    
+    recents = [NSArray arrayWithArray:temp];
+    NSSortDescriptor * ts = [[NSSortDescriptor alloc] initWithKey:@"createTS" ascending:true];
+    recents =  [recents sortedArrayUsingDescriptors:@[ts]];
+    
     [[NSNotificationCenter defaultCenter] postNotificationName:@"kMetaReady" object:nil];
  
-    NSLog(@"recipes is %@", recipes);
-    
 }
-
+-(NSString *)pathForProfileForUser:(NSString *)userID isThumb:(bool)isThumb {
+    
+    NSLog(@"media is %@", media);
+    
+    
+    return nil;
+}
 
 -(void)setPreferredCanton:(NSString *)canton {
     
@@ -321,6 +354,8 @@ static Donkey *sharedInstance = nil;
 
     cantonUsers = [self sortUsersForCanton:selectedCanton];
     cantonRecipes = [self sortRecipesForCanton:selectedCanton];
+    cantonRecents = [self sortRecentsForCanton:selectedCanton];
+
 }
 -(NSArray *)sortUsersForCanton:(NSString *)canton {
     
@@ -352,12 +387,30 @@ static Donkey *sharedInstance = nil;
         }
     }
     
-    NSLog(@"unsorted is %@", unsorted);
+    //NSLog(@"unsorted is %@", unsorted);
     
     //sort by score
     NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"weighted" ascending:false];
     return [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor]];
 
+}
+-(NSArray *)sortRecentsForCanton:(NSString *)canton {
+    
+    //holds filtered recipes
+    NSMutableArray * unsorted = [NSMutableArray new];
+    
+    //loop through pulling out values
+    for (NSDictionary * recent in recents){
+        NSString * location = recent[@"location"];
+        if ([location isEqualToString:canton] || [canton isEqualToString:@"Schweizweit"]){
+            [unsorted addObject:recent];
+        }
+    }
+    
+    //sort by ts
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"createTS" ascending:false];
+    return [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor]];
+    
 }
 -(NSDictionary *)rankingForRecipe:(NSString *)recipeID {
     

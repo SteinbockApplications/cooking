@@ -8,7 +8,11 @@
 
 #import "Peacock.h"
 
-@implementation Peacock
+@implementation Peacock {
+    
+    NSDateFormatter * df;
+    NSDateFormatter * dfHour;
+}
 static Peacock *sharedInstance = nil;
 @synthesize appleDark, appleGrey, appleWhite, appleBlue, tedRed, soundCloudOrange, appColour;
 @synthesize korelessPink, korelessPurple;
@@ -38,8 +42,15 @@ static Peacock *sharedInstance = nil;
         //koreless purple #773275
         //koreless pink #A41838
         
-        korelessPurple = [self colourForHex:@"#773275"];
+        korelessPurple = [self colourForHex:@"#AE49AB"];
         korelessPink = [self colourForHex:@"#A41838"];
+        
+        df = [NSDateFormatter new];
+        [df setDateFormat:@"dd.MM.yyyy"];
+        
+        dfHour = [NSDateFormatter new];
+        [dfHour setDateFormat:@"HH:mm"];
+        
     }
     return self;
 }
@@ -257,6 +268,27 @@ static Peacock *sharedInstance = nil;
         second = [split[split.count-1] substringToIndex:1];
     }
  return [NSString stringWithFormat:@"%@%@", first, second];
+}
+
+
+
+-(NSString *)dateForTimestamp:(NSString *)ts {
+    
+    NSDate * date = [NSDate dateWithTimeIntervalSince1970:ts.intValue];
+    if ([[NSCalendar currentCalendar] isDateInToday:date]){
+        return [NSString stringWithFormat:@"Heute %@", [dfHour stringFromDate:date]];
+    } else if ([[NSCalendar currentCalendar] isDateInYesterday:date]){
+        return [NSString stringWithFormat:@"Gestern %@", [dfHour stringFromDate:date]];
+    }
+    
+    return [df stringFromDate:date];
+    
+    
+}
+-(void)updateStatusBarIsDark:(bool)isDark isHidden:(bool)isHidden {
+
+    NSDictionary * d = @{@"isDark":[NSNumber numberWithBool:isDark],@"isHidden":[NSNumber numberWithBool:isHidden]};
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"kStatusBarUpdate" object:d];
 }
 
 

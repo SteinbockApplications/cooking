@@ -202,12 +202,12 @@
         if (!isRecording){ //START RECORDING
             
             if (TARGET_IPHONE_SIMULATOR){ return; }
-            
+            /*
             isRecording = true;
             NSString * outputPath = [_fish filePathForFilename:@"temp.mp4" inFolder:@"videos"];
             NSURL * outputURL = [[NSURL alloc] initFileURLWithPath:outputPath];
             [fileOut startRecordingToOutputFileURL:outputURL recordingDelegate:self];
-            
+            */
         } else { //END RECORDING
 
             isRecording = false;

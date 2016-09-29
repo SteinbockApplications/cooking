@@ -9,11 +9,13 @@
 #import "recipeVC.h"
 #import "Peacock.h"
 #import "Donkey.h"
+#import "Dog.h"
 
 @interface recipeVC () {
     
     Peacock * _peacock;
     Donkey * _donkey;
+    Dog * _dog;
     
     float w;
     float h;
@@ -33,6 +35,9 @@
     UIButton * ingredientsButton;
     UIButton * instructionsButton;
     UITextView * prepTV;
+    
+    UIView * starSlider;
+    UILabel * rateHintLabel;
 }
 
 @end
@@ -47,6 +52,7 @@
     
     _peacock = [Peacock sharedInstance];
     _donkey = [Donkey sharedInstance];
+    _dog = [Dog sharedInstance];
     
     w = self.view.frame.size.width;
     h = self.view.frame.size.height;
@@ -96,7 +102,16 @@
     recipeIV.frame = CGRectMake(0, 0, w, 400);
     recipeIV.contentMode = UIViewContentModeScaleAspectFill;
     recipeIV.clipsToBounds = true;
-    recipeIV.image = [UIImage imageNamed:@"recipe.png"];
+
+    //recipe iv
+    dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+        NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/%@/hero.jpg",recipe[@"userID"],recipe[@"recipeID"]];
+        UIImage * image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
+        dispatch_async(dispatch_get_main_queue(), ^(void){
+            recipeIV.image = image;
+        });
+    });
+    
     [topView addSubview:recipeIV];
     
     UIImageView * cover = [UIImageView new];
@@ -337,7 +352,6 @@
     yOff += instructionsText.frame.size.height;
     yOff += 20;
     
-    
     //COOK
     UIButton * cookButton = [UIButton new];
     cookButton.frame = CGRectMake(20, yOff, w-40, 60);
@@ -438,7 +452,9 @@
     //RATING
     NSDictionary * ranks = [_donkey rankingForRecipe:recipe[@"recipeID"]];
     NSLog(@"ranks is %@", ranks);
+    [self layoutRankViewAtOffset:yOff];
     
+    /*
     UIView * ratingView = [UIView new];
     ratingView.frame = CGRectMake(0, yOff, w, 120);
     [mainScroller addSubview:ratingView];
@@ -469,8 +485,8 @@
     helperLabel.textColor = [UIColor whiteColor];
     helperLabel.text = @"Noch Keine Bewertung";
     [ratingView addSubview:helperLabel];
-    
-    yOff += 120;
+    */
+    yOff += 450;
     
     
     
@@ -479,6 +495,189 @@
     contentView.frame = CGRectMake(0, 0, w, yOff+20);
     mainScroller.contentSize = CGSizeMake(w, yOff+20);
 }
+
+-(void)layoutRankViewAtOffset:(float)yOff {
+    
+    UIView * rankView = [UIView new];
+    rankView.frame = CGRectMake(0, yOff, w, 450);
+    [mainScroller addSubview:rankView];
+    
+    float localY = 0.0f;
+    float localX = 15.0f;
+    
+    UILabel * rankLabel = [UILabel new];
+    rankLabel.frame = CGRectMake(20, localY, w-40, 40);
+    rankLabel.textColor = [UIColor whiteColor];
+    rankLabel.textAlignment = NSTextAlignmentLeft;
+    rankLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    rankLabel.text = @"Rang";
+    [rankView addSubview:rankLabel];
+    
+    localY += 30;
+    
+    UILabel * cantonLabel = [UILabel new];
+    cantonLabel.frame = CGRectMake(20, localY, w-40, 40);
+    cantonLabel.textColor = [UIColor whiteColor];
+    cantonLabel.textAlignment = NSTextAlignmentLeft;
+    cantonLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular];
+    cantonLabel.text = @"Apppenzell Innerhoden";
+    [rankView addSubview:cantonLabel];
+    
+    UILabel * cantonRank = [UILabel new];
+    cantonRank.frame = CGRectMake(w-50, localY, 40, 40);
+    cantonRank.textColor = [UIColor whiteColor];
+    cantonRank.textAlignment = NSTextAlignmentLeft;
+    cantonRank.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    cantonRank.text = @"#2";
+    [rankView addSubview:cantonRank];
+    
+    localY += 30;
+    
+    UILabel * nationalLabel = [UILabel new];
+    nationalLabel.frame = CGRectMake(20, localY, w-40, 40);
+    nationalLabel.textColor = [UIColor whiteColor];
+    nationalLabel.textAlignment = NSTextAlignmentLeft;
+    nationalLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightRegular];
+    nationalLabel.text = @"Schweizweit";
+    [rankView addSubview:nationalLabel];
+    
+    UILabel * nationalRank = [UILabel new];
+    nationalRank.frame = CGRectMake(w-50, localY, 40, 40);
+    nationalRank.textColor = [UIColor whiteColor];
+    nationalRank.textAlignment = NSTextAlignmentLeft;
+    nationalRank.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    nationalRank.text = @"#32";
+    [rankView addSubview:nationalRank];
+    
+    localY += 40;
+    
+    for (int n = 0; n < 5; n++){
+        
+        UIView * cell = [UIView new];
+        cell.frame = CGRectMake(0, localY, w, 40);
+        [rankView addSubview:cell];
+        
+        UILabel * label = [UILabel new];
+        label.frame = CGRectMake(localX, 10, 20, 20);
+        label.textColor = [UIColor whiteColor];
+        label.textAlignment = NSTextAlignmentCenter;
+        label.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightBold];
+        label.text = [NSString stringWithFormat:@"%i", n+1];
+        [cell addSubview:label];
+        
+        localX += 20;
+        
+        UIImageView * iv = [UIImageView new];
+        iv.frame = CGRectMake(localX, 9, 20, 20);
+        iv.image = [[UIImage imageNamed:@"star_full-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        iv.tintColor = [UIColor whiteColor];
+        iv.contentMode = UIViewContentModeScaleAspectFit;
+        [cell addSubview:iv];
+        
+        localX += 20 + 10;
+        
+        UIImageView * track = [UIImageView new];
+        track.frame = CGRectMake(localX, 12, w-125, 16);
+        track.backgroundColor = [[UIColor whiteColor] colorWithAlphaComponent:0.1f];
+        [cell addSubview:track];
+        
+        UIImageView * train = [UIImageView new];
+        train.frame = CGRectMake(0, 0, 43, 16);
+        train.backgroundColor = _peacock.appColour;
+        [track addSubview:train];
+        
+        localX += (w-125) + 10;
+        
+        UILabel * count = [UILabel new];
+        count.frame = CGRectMake(localX, 10, 40, 20);
+        count.textColor = [UIColor whiteColor];
+        count.textAlignment = NSTextAlignmentLeft;
+        count.font = [UIFont systemFontOfSize:13.0f weight:UIFontWeightBold];
+        count.text = @"(32)";
+        [cell addSubview:count];
+
+        localY += 40;
+        localX = 15;
+    }
+    
+    localY += 10;
+
+    UILabel * voteLabel = [UILabel new];
+    voteLabel.frame = CGRectMake(20, localY, w-40, 40);
+    voteLabel.textColor = [UIColor whiteColor];
+    voteLabel.textAlignment = NSTextAlignmentLeft;
+    voteLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightBold];
+    voteLabel.text = @"Deine Bewertung";
+    [rankView addSubview:voteLabel];
+    
+    localY += 40;
+    localX = 20;
+    
+    starSlider = [UIView new];
+    starSlider.frame = CGRectMake(0, localY, w, 40);
+    starSlider.userInteractionEnabled = true;
+    [rankView addSubview:starSlider];
+    
+    UIPanGestureRecognizer * pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panRate:)];
+    [starSlider addGestureRecognizer:pan];
+    
+    UITapGestureRecognizer * tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapRate:)];
+    [starSlider addGestureRecognizer:tap];
+    
+    for (int n = 0; n < 5; n++){
+        
+        UIImageView * starIV = [UIImageView new];
+        starIV.frame = CGRectMake(localX, 0, 40, 40);
+        starIV.contentMode = UIViewContentModeScaleAspectFit;
+        starIV.image = [[UIImage imageNamed:@"star_full-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        starIV.tintColor = [[UIColor whiteColor] colorWithAlphaComponent:0.5f];
+        [starSlider addSubview:starIV];
+        localX += 40+5;
+    }
+
+    
+    localY += 45;
+    
+    rateHintLabel = [UILabel new];
+    rateHintLabel.frame = CGRectMake(20, localY, w-40, 20);
+    rateHintLabel.font = [UIFont systemFontOfSize:15.0f weight:UIFontWeightThin];
+    rateHintLabel.textColor = [UIColor whiteColor];
+    rateHintLabel.text = @"Noch Keine Bewertung";
+    [rankView addSubview:rateHintLabel];
+    
+    
+}
+
+-(void)panRate:(UIPanGestureRecognizer *)pan {
+    float x = [pan locationInView:starSlider].x;
+    int star = MIN((x / 45.0f), 4);
+    [self updateRate:star];
+}
+-(void)tapRate:(UITapGestureRecognizer *)tap {
+    float x = [tap locationInView:starSlider].x;
+    int star = MIN((x / 45.0f), 4);
+    [self updateRate:star];
+}
+-(void)updateRate:(int)rate {
+    
+    for (int n = 0; n<5; n++){
+        UIImageView * starIV = starSlider.subviews[n];
+        if (n<=rate){
+            starIV.tintColor = _peacock.appColour;
+        } else {
+            starIV.tintColor = [[UIColor whiteColor] colorWithAlphaComponent:0.5f];
+        }
+    }
+    
+    NSArray * rateHints = @[@"Giftig",@"Braucht Arbeit",@"Durchschnittlich",@"Geschmackvoll",@"Köstlich"];
+    rateHintLabel.text = rateHints[rate];
+    
+    [_dog voteOnRecipe:recipe[@"recipeID"]
+            forVoterID:_donkey.deviceUser[@"userID"]
+            forOwnerID:recipe[@"userID"]
+              withVote:(rate+1)];
+}
+
 
 //TOPVIEW
 -(void)favourite {

@@ -10,11 +10,11 @@
 
 @interface Fish : NSObject
 +(id)sharedInstance;
--(BOOL)checkExists:(NSString *)filename inFolder:(NSString *)folder;
--(NSString *)filePathForFilename:(NSString *)filename inFolder:(NSString *)folder;
--(void)saveData:(NSData *)data toFilename:(NSString *)filename inFolder:(NSString *)folder;
+-(NSString *)filePathForFilename:(NSString *)filename;
+-(BOOL)checkExists:(NSString *)filename;
+-(void)saveData:(NSData *)data toFilename:(NSString *)filename;
+-(void)deleteFile:(NSString *)filename;
+-(void)deleteFiles;
 
--(void)deleteFile:(NSString *)filename inFolder:(NSString *)folder;
--(void)deleteLargeFiles;
 
 @end

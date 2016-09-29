@@ -38,6 +38,8 @@
     int votes;
     NSMutableArray * recipes;
     NSMutableArray * followers;
+    
+    NSDictionary * user;
 }
 @end
 @implementation chefVC
@@ -61,6 +63,8 @@
     //pull the data
     NSDictionary * d = _donkey.users[userID];
     NSLog(@"d is %@", d);
+    
+    user = _donkey.users[userID];
     
     name = d[@"name"];
     location = d[@"location"];
@@ -104,8 +108,15 @@
     profileIV.backgroundColor = [UIColor darkGrayColor];
     profileIV.contentMode = UIViewContentModeScaleAspectFill;
     profileIV.clipsToBounds = true;
-    profileIV.image = [UIImage imageNamed:@"cookd.png"];
     [self.view addSubview:profileIV];
+    
+    dispatch_async(dispatch_get_global_queue( DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void){
+        NSString * path = [NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@/profile.jpg",user[@"userID"]];
+        UIImage * image = [UIImage imageWithData:[NSData dataWithContentsOfURL:[NSURL URLWithString:path]]];
+        dispatch_async(dispatch_get_main_queue(), ^(void){
+            profileIV.image = image;
+        });
+    });
     
     cover = [UIImageView new];
     cover.frame = profileIV.bounds;

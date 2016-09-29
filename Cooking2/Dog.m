@@ -8,12 +8,12 @@
 
 #import "Dog.h"
 #import "Donkey.h"
-//#import "Fish.h"
+#import "Fish.h"
 //#import "Harbour.h"
 
 @implementation Dog {
     
-  //  Fish * _fish;
+    Fish * _fish;
   //  Harbour * _harbour;
     
     Donkey * _donkey;
@@ -32,7 +32,7 @@ static Dog *sharedInstance = nil;
 - (id)init {
     self = [super init];
     if (self) {
-      //  _fish = [Fish sharedInstance];
+            _fish = [Fish sharedInstance];
       //  _harbour = [Harbour sharedInstance];
         
         _donkey = [Donkey sharedInstance];
@@ -41,37 +41,7 @@ static Dog *sharedInstance = nil;
     return self;
 }
 
--(void)fetchFile:(NSString *)filename fromFolder:(NSString *)folder callback:(NSString *)callback {
-    
-    /*
-    //does not allow overwriting
-    if ([_fish checkExists:filename inFolder:folder]){
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"kFileReady" object:callback];
-        return;
-    }
-    //if it's already being pulled
-    if (![fetchArray containsObject:filename]){
-        [fetchArray addObject:filename];
-    } else {
-        return;
-    }
 
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        
-        NSURL * url = [NSURL URLWithString:[NSString stringWithFormat:@"http://www.steinbockapplications.com/other/zeroApp/media/%@/%@",folder,filename]];
-        NSData * data = [NSData dataWithContentsOfURL:url];
-        
-      //  Fish * fish = [Fish sharedInstance];
-      //  [fish saveData:data toFilename:filename inFolder:folder];
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            
-            [[NSNotificationCenter defaultCenter] postNotificationName:@"kFileReady" object:callback];
-        });
-    });
-     */
-}
 -(void)updateFavouriteOnServerForMediaID:(NSString *)mediaID isUpVote:(bool)isUpVote {
     
     NSURLSessionConfiguration *defaultConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
@@ -261,7 +231,7 @@ static Dog *sharedInstance = nil;
      if (jsonError){
          NSLog(@"JSON ERROR: %@", jsonError.description);
      } else {
-         [_donkey parseMeta:dictionary]; 
+         [_donkey parseMeta:dictionary];
      }
      
      
@@ -269,6 +239,51 @@ static Dog *sharedInstance = nil;
      [dataTask resume];
     
     
+}
+
+//FETCH FILE
+-(NSString *)fetchFileFromPath:(NSString *)path withCallback:(NSString *)callback {
+    
+    
+    NSString * filename = [path stringByReplacingOccurrencesOfString:@"/" withString:@"_"];
+    //NSLog(@"filename is %@", filename);
+    
+    //does not allow overwriting
+    if ([_fish checkExists:filename]){
+        return [_fish filePathForFilename:filename];
+    }
+    //if it's already being pulled
+    if (![fetchArray containsObject:filename]){
+        [fetchArray addObject:filename];
+    } else {
+        return nil;
+    }
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        
+        NSURL * url = [NSURL URLWithString:[NSString stringWithFormat:@"http://www.steinbockapplications.com/other/cooking/users/%@",path]];
+        NSData * data = [NSData dataWithContentsOfURL:url];
+        NSLog(@"url is %@", url);
+        if (data){
+            
+            [_fish saveData:data toFilename:filename];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"kFileReady" object:callback userInfo:@{@"path":[_fish filePathForFilename:filename]}];
+            });
+            
+        } else {
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                
+                [[NSNotificationCenter defaultCenter] postNotificationName:@"kFileFailed" object:callback];
+            });
+            
+        }
+    });
+    
+    return nil;
 }
 
 //UPDATING USER
@@ -775,4 +790,36 @@ static Dog *sharedInstance = nil;
     
 }
 
+
+
+-(void)voteOnRecipe:(NSString *)recipeID
+         forVoterID:(NSString *)voterID
+         forOwnerID:(NSString *)ownerID
+           withVote:(int)vote {
+
+    NSURLSessionConfiguration *defaultConfig = [NSURLSessionConfiguration defaultSessionConfiguration];
+    NSURLSession *defaultSession = [NSURLSession sessionWithConfiguration:defaultConfig delegate:nil delegateQueue:[NSOperationQueue mainQueue]];
+    
+    //Create an URLRequest
+    NSURL * url = [NSURL URLWithString:@"http://steinbockapplications.com/other/cooking/php/vote.php"];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
+    
+    //Create POST Params and add it to HTTPBody
+    NSString * postString = [NSString stringWithFormat:@"dbUser=Ghost&dbPassword=65j8krP2&recipeID=%@&voterID=%@&ownerID=%@&vote=%i",recipeID,voterID,ownerID,vote];
+    [request setHTTPMethod:@"POST"];
+    [request setHTTPBody:[postString dataUsingEncoding:NSUTF8StringEncoding]];
+    
+    //Create task
+    NSURLSessionDataTask * dataTask =[defaultSession
+                                      dataTaskWithRequest:request
+                                      completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                                          
+                                          //NSString * dataString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+                                          //NSLog(@"DATA STRING IS %@", dataString);
+                                          
+                                      }];
+    [dataTask resume];
+    
+    
+}
 @end

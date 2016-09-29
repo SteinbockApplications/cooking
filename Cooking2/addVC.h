@@ -1,5 +1,5 @@
 //
-//  editVC.h
+//  addVC.h
 //  Cooking2
 //
 //  Created by Duncan Geoghegan on 29/08/16.
@@ -8,6 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-@interface editVC : UIViewController <UIScrollViewDelegate, UITextFieldDelegate, UIPickerViewDelegate, UITextViewDelegate>
+@interface addVC : UIViewController <UIScrollViewDelegate, UITextFieldDelegate, UIPickerViewDelegate, UITextViewDelegate>
 
 @end

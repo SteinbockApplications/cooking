@@ -20,6 +20,7 @@
 @property NSArray * skillLevels;
 @property NSArray * courses;
 
+@property NSArray * recents;
 
 
 +(id)sharedInstance;
@@ -38,7 +39,11 @@
 -(void)sortDataForPreferredCanton;
 @property NSArray * cantonUsers;
 @property NSArray * cantonRecipes;
+@property NSArray * cantonRecents;
 
 -(NSDictionary *)rankingForRecipe:(NSString *)recipeID;
+
+
+@property NSArray * media;
 
 @end
