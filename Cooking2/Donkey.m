@@ -390,8 +390,9 @@ static Donkey *sharedInstance = nil;
     //NSLog(@"unsorted is %@", unsorted);
     
     //sort by score
-    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"weighted" ascending:false];
-    return [unsorted sortedArrayUsingDescriptors:@[scoreDescriptor]];
+    NSSortDescriptor * weightDescriptor = [[NSSortDescriptor alloc] initWithKey:@"weighted" ascending:false];
+    NSSortDescriptor * scoreDescriptor = [[NSSortDescriptor alloc] initWithKey:@"score" ascending:false];
+    return [unsorted sortedArrayUsingDescriptors:@[weightDescriptor,scoreDescriptor]];
 
 }
 -(NSArray *)sortRecentsForCanton:(NSString *)canton {
@@ -414,31 +415,41 @@ static Donkey *sharedInstance = nil;
 }
 -(NSDictionary *)rankingForRecipe:(NSString *)recipeID {
     
+    //get data
     NSDictionary * recipe = recipes[recipeID];
     NSString * userID = recipe[@"userID"];
     NSDictionary * user = users[userID];
     NSString * location = user[@"location"];
     
+    //get rank
     NSArray * national = [self sortRecipesForCanton:@"Schweizweit"];
-    NSArray * canton = [self sortRecipesForCanton:location];
-    NSLog(@"CANTONS IS %@", canton);
-    
-    int nationalRank = (int)national.count;
-    for (NSDictionary * d in national){
-        if ([d[@"recipeID"] isEqualToString:recipeID]){
-            nationalRank = (int)[national indexOfObject:d]+1;
-            break;
-        }
-    }
-    int cantonRank = (int)canton.count;
-    for (NSDictionary * d in canton){
-        if ([d[@"recipeID"] isEqualToString:recipeID]){
-            cantonRank = (int)[canton indexOfObject:d]+1;
-            break;
-        }
+    NSArray * cantonal = [self sortRecipesForCanton:location];
+    int nationalRank = (int)[national indexOfObject:recipe]+1;
+    int cantonalRank = (int)[cantonal indexOfObject:recipe]+1;
+
+    //return star count
+    NSMutableDictionary * md = [NSMutableDictionary new];
+    NSArray * scores = recipe[@"scores"];
+    for (NSString * score in scores){
+        md[score] = [NSNumber numberWithInt:[md[score] intValue]+1];
     }
     
-    return @{@"national":[NSNumber numberWithInt:nationalRank],@"canton":[NSNumber numberWithInt:cantonRank]};
+    //pull max
+    float max = [[md.allValues valueForKeyPath:@"@max.self"] floatValue];
+    
+    NSMutableDictionary * mdP = [NSMutableDictionary new];
+    for (NSString * key in md.allKeys){
+        mdP[key]= [NSNumber numberWithFloat:100 / (max / [md[key] floatValue])];
+    }
+    
+    NSDictionary * package = [NSDictionary dictionaryWithObjectsAndKeys:
+                              [NSNumber numberWithInt:nationalRank],@"national",
+                              [NSNumber numberWithInt:cantonalRank],@"cantonal",
+                              md,@"count",
+                              mdP,@"percentages", nil];
+    return package;
+    
+
 }
 
 /*

@@ -9,21 +9,25 @@
 #import "mainVC.h"
 #import "Peacock.h"
 #import "User.h"
+
 #import "openVC.h"
 #import "Donkey.h"
 #import "Dog.h"
 #import "Fish.h"
 
+
+
+
 #import "addVC.h"
-#define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
-
-
-
 #import "chefVC.h"
 #import "recipeVC.h"
+#import "searchVC.h"
 
 #import "recipeCVC.h"
 #import "chefCVC.h"
+
+#define DEGREES_TO_RADIANS(x) (M_PI * (x) / 180.0)
+
 
 @interface mainVC () {
     
@@ -38,6 +42,7 @@
     recipeVC * _recipeVC;
     
     addVC * _addVC;
+    searchVC * _searchVC;
 
     
     float w;
@@ -222,10 +227,6 @@
     for (NSDictionary * d in _donkey.cantonRecipes){
         [recipePaths addObject:[NSString stringWithFormat:@"%@/%@/%@", d[@"userID"], d[@"recipeID"], @"hero.jpg"]];
     }
-    NSLog(@"recent paths: %@", recentPaths);
-    NSLog(@"userpaths is %@", userPaths);
-    NSLog(@"recipepaths is %@", recipePaths);
-    
     
     //update the ui
     [self refreshScroller];
@@ -238,9 +239,11 @@
     
     //TOPBAR
     topBar = [UIView new];
-    topBar.frame = CGRectMake(0, 0, w, 60);
+    topBar.frame = CGRectMake(0, -h+60, w, h);
     topBar.backgroundColor = [UIColor whiteColor];
     [self.view addSubview:topBar];
+    
+    float localY = h-60;
     
     CAGradientLayer * topBarGradient = [CAGradientLayer layer];
     topBarGradient.frame = CGRectMake(0, 0, w, 60);
@@ -257,14 +260,19 @@
     [topBar.layer insertSublayer:topBarGradient atIndex:0];
     
     UIImageView * searchIV = [UIImageView new];
-    searchIV.frame = CGRectMake(10, 22, 30, 30);
+    searchIV.frame = CGRectMake(10, localY+22, 30, 30);
     searchIV.contentMode = UIViewContentModeScaleAspectFit;
     searchIV.image = [[UIImage imageNamed:@"search-128.png"] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
     searchIV.tintColor = [[UIColor blackColor] colorWithAlphaComponent:0.2f];
     [topBar addSubview:searchIV];
     
+    UIButton * searchButton = [UIButton new];
+    searchButton.frame = CGRectMake(0, localY, 50, 60);
+    [searchButton addTarget:self action:@selector(search) forControlEvents:UIControlEventTouchUpInside];
+    [topBar addSubview:searchButton];
+    
     profileIV = [UIImageView new];
-    profileIV.frame = CGRectMake(w-40, 22, 30, 30);
+    profileIV.frame = CGRectMake(w-40, localY+22, 30, 30);
     profileIV.layer.cornerRadius = 15.0f;
     profileIV.contentMode = UIViewContentModeScaleAspectFit;
     profileIV.clipsToBounds = true;
@@ -282,6 +290,48 @@
 
 //SEARCH
 -(void)search {
+    
+    NSLog(@"SEARCH");
+    /*
+    
+    _searchVC = [searchVC new];
+    [self addChildViewController:_searchVC];
+    [self.view addSubview:_searchVC.view];
+     
+     */
+    
+    UIView * searchView = [UIView new];
+    searchView.frame = CGRectMake(0, 100, w, h-60);
+    searchView.backgroundColor = [UIColor whiteColor];
+    [self.view addSubview:searchView];
+    searchView.transform = CGAffineTransformMakeTranslation(-w, 0);
+    
+    [UIView animateWithDuration:0.8f
+                          delay:0.3f
+         usingSpringWithDamping:1.0f
+          initialSpringVelocity:0.8f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                        // topBar.transform = CGAffineTransformMakeTranslation(0, h-60);
+                         profileIV.alpha = 0.0f;
+                         searchView.transform = CGAffineTransformIdentity;
+                         
+                     }
+                     completion:^(BOOL finished){
+       
+                     }];
+
+    [UIView animateWithDuration:0.8f
+                          delay:0.1f
+         usingSpringWithDamping:0.8f
+          initialSpringVelocity:1.0f
+                        options:UIViewAnimationOptionAllowUserInteraction
+                     animations:^{
+                         
+                       //  addButtonView.transform = CGAffineTransformMakeTranslation(0, 100);
+                     }
+                     completion:^(BOOL finished){
+                     }];
     
 }
 
@@ -940,15 +990,13 @@
       
         }
     }
-    
-    NSLog(@"N");
+
 }
 
 //NAVIGATION
 -(void)pushChefVC:(NSNotification *)n{
     
-    NSLog(@"PUSH CHEF VC");
-    
+   
     //create vc + set chef
     _chefVC = [chefVC new];
     [self addChildViewController:_chefVC];
@@ -971,7 +1019,6 @@
 }
 -(void)popChefVC {
     
-    NSLog(@"POP CHEF VC");
     [UIView animateWithDuration:0.3f
                           delay:0.0f
          usingSpringWithDamping:1.0f
@@ -1009,8 +1056,8 @@
                      }];
 }
 -(void)popRecipeVC{
+
     
-    NSLog(@"POP RECIPE VC");
     [UIView animateWithDuration:0.3f
                           delay:0.0f
          usingSpringWithDamping:1.0f
@@ -1029,10 +1076,6 @@
     
 }
 
-
-
-
-//EDIT (NEW RECIPE)
 
 
 //OPEN

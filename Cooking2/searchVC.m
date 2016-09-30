@@ -36,7 +36,17 @@
 }
 -(void)layout{
     
-    self.view.backgroundColor = [UIColor blackColor];
+
+    UIVisualEffectView * vs = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight]];
+    vs.frame = self.view.frame;
+  //  [self.view addSubview:vs];
+    
+    UIView * view = [UIView new];
+    view.frame = CGRectMake(0, 60, w, h-60);
+    view.backgroundColor = [UIColor whiteColor];
+    [self.view addSubview:view];
+    
+    
 }
 -(void)begin{
     
